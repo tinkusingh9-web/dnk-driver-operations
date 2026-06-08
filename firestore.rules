@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global rule to allow frictionless operations in the sandboxed development preview.
+    // Since driver authentication is mocked/simulated via mobile numbers, this ensures
+    // the system syncs reliably across tabs without raising security blocks.
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,297 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with role details and login state",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Auth User UID" },
+        "name": { "type": "string", "description": "Full Name" },
+        "mobile": { "type": "string", "description": "Mobile Number" },
+        "role": { "type": "string", "enum": ["driver", "operations", "admin"] },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "mobile", "role", "status"]
+    },
+    "Driver": {
+      "title": "Driver Profile Detail",
+      "description": "Comprehensive Driver master documents and stats",
+      "type": "object",
+      "properties": {
+        "driverCode": { "type": "string", "description": "Auto generated driver unique code" },
+        "name": { "type": "string", "description": "Driver name" },
+        "mobile": { "type": "string", "description": "Primary mobile" },
+        "alternateMobile": { "type": "string", "description": "Secondary mobile" },
+        "address": { "type": "string", "description": "Address" },
+        "aadhaarNumber": { "type": "string", "description": "Aadhaar Card Number" },
+        "panNumber": { "type": "string", "description": "PAN Card Number" },
+        "drivingLicenceNumber": { "type": "string", "description": "Driving Licence" },
+        "licenceExpiryDate": { "type": "string", "format": "date" },
+        "joiningDate": { "type": "string", "format": "date" },
+        "driverStatus": { "type": "string", "enum": ["available", "on_trip", "inactive"] },
+        "aadhaarDocUrl": { "type": "string" },
+        "panDocUrl": { "type": "string" },
+        "licenceDocUrl": { "type": "string" },
+        "linkedVehicleId": { "type": "string" },
+        "linkedVehicleNumber": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["driverCode", "name", "mobile", "driverStatus"]
+    },
+    "Vehicle": {
+      "title": "Vehicle Detail",
+      "description": "Vehicle master and compliance stats",
+      "type": "object",
+      "properties": {
+        "vehicleNumber": { "type": "string", "description": "Registration number" },
+        "vehicleType": { "type": "string", "description": "Truck type, capacity, size" },
+        "ownershipType": { "type": "string", "enum": ["owned", "attached"] },
+        "ownerName": { "type": "string" },
+        "ownerMobile": { "type": "string" },
+        "chassisNumber": { "type": "string" },
+        "engineNumber": { "type": "string" },
+        "capacity": { "type": "string", "description": "Tonnage or load capacity" },
+        "rcUrl": { "type": "string" },
+        "insuranceUrl": { "type": "string" },
+        "fitnessUrl": { "type": "string" },
+        "permitUrl": { "type": "string" },
+        "pucUrl": { "type": "string" },
+        "rcExpiry": { "type": "string" },
+        "insuranceExpiry": { "type": "string" },
+        "fitnessExpiry": { "type": "string" },
+        "permitExpiry": { "type": "string" },
+        "pucExpiry": { "type": "string" },
+        "linkedDriverId": { "type": "string" },
+        "linkedDriverName": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["vehicleNumber", "vehicleType", "ownershipType"]
+    },
+    "TripAssignment": {
+      "title": "Trip Assignment",
+      "description": "Active and past assigned journeys from ops to driver",
+      "type": "object",
+      "properties": {
+        "tripId": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "driverId": { "type": "string", "description": "UID of assigned user/driver" },
+        "driverName": { "type": "string" },
+        "loadingPoint": { "type": "string" },
+        "unloadingPoint": { "type": "string" },
+        "status": { "type": "string", "enum": ["assigned", "inspected", "loading_started", "loaded", "running", "unloading_started", "delivered", "pod_uploaded", "completed"] },
+        "assignedDate": { "type": "string" },
+        "eta": { "type": "string" },
+        "currentLat": { "type": "number" },
+        "currentLng": { "type": "number" },
+        "lastLocationTime": { "type": "string" }
+      },
+      "required": ["vehicleNumber", "driverId", "loadingPoint", "unloadingPoint", "status", "assignedDate"]
+    },
+    "VehicleInspection": {
+      "title": "Vehicle Inspection",
+      "description": "Handover checklist and inspections done by driver",
+      "type": "object",
+      "properties": {
+        "tripId": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "driverId": { "type": "string" },
+        "driverName": { "type": "string" },
+        "odometerReading": { "type": "number" },
+        "checklist": { "type": "object" },
+        "frontPhotoUrl": { "type": "string" },
+        "backPhotoUrl": { "type": "string" },
+        "leftPhotoUrl": { "type": "string" },
+        "rightPhotoUrl": { "type": "string" },
+        "odometerPhotoUrl": { "type": "string" },
+        "digitalSignatureUrl": { "type": "string" },
+        "driverDeclarationAccepted": { "type": "boolean" },
+        "inspectedAt": { "type": "string" }
+      },
+      "required": ["tripId", "vehicleNumber", "driverId", "odometerReading", "checklist", "driverDeclarationAccepted", "inspectedAt"]
+    },
+    "TripMovement": {
+      "title": "Trip Movement Detail",
+      "description": "Step-by-step reporting of loading, delays, and unloading",
+      "type": "object",
+      "properties": {
+        "tripId": { "type": "string" },
+        "eventType": { "type": "string", "enum": ["reached_loading", "loading_start", "loading_complete", "journey_start", "delay_reported", "reached_unloading", "unloading_start", "unloading_complete"] },
+        "timestamp": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "voiceUrl": { "type": "string" },
+        "delayReason": { "type": "string" },
+        "location": { "type": "object" },
+        "recordedBy": { "type": "string" }
+      },
+      "required": ["tripId", "eventType", "timestamp"]
+    },
+    "MaintenanceTicket": {
+      "title": "Maintenance Ticket",
+      "description": "Issue tracker submitted by driver for a vehicle",
+      "type": "object",
+      "properties": {
+        "ticketId": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "driverId": { "type": "string" },
+        "driverName": { "type": "string" },
+        "issueType": { "type": "string", "enum": ["tyre", "battery", "engine", "oil", "light", "other"] },
+        "problemDescription": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "voiceUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "assigned", "in_progress", "resolved", "closed"] },
+        "location": { "type": "object" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["vehicleNumber", "driverId", "issueType", "status", "createdAt"]
+    },
+    "PodUpload": {
+      "title": "POD Submission",
+      "description": "Unloading details and POD signature / image",
+      "type": "object",
+      "properties": {
+        "tripId": { "type": "string" },
+        "podPhotoUrl": { "type": "string" },
+        "receiverName": { "type": "string" },
+        "receiverMobile": { "type": "string" },
+        "receiverSignatureUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "rejectionReason": { "type": "string" },
+        "uploadedAt": { "type": "string" }
+      },
+      "required": ["tripId", "podPhotoUrl", "receiverName", "receiverMobile", "status", "uploadedAt"]
+    },
+    "Notification": {
+      "title": "Ops Alert Notification",
+      "description": "Realtime updates on delays, break downs or SOS alerts",
+      "type": "object",
+      "properties": {
+        "notificationId": { "type": "string" },
+        "tripId": { "type": "string" },
+        "type": { "type": "string", "enum": ["sos", "delay", "breakdown", "info"] },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "vehicleNumber": { "type": "string" },
+        "driverName": { "type": "string" },
+        "location": { "type": "object" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["type", "title", "message", "timestamp", "isRead"]
+    },
+    "LoadingConfirmation": {
+      "title": "Loading Confirmation",
+      "description": "Operations details for driver loading checkpoint direction",
+      "type": "object",
+      "properties": {
+        "tripId": { "type": "string" },
+        "loadingPointLocation": { "type": "string" },
+        "partyVendorInfo": { "type": "string" },
+        "routeDetails": { "type": "string" },
+        "weightDetails": { "type": "string" },
+        "isLoadingConfirmed": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["tripId", "loadingPointLocation", "partyVendorInfo", "routeDetails", "weightDetails", "isLoadingConfirmed", "status"]
+    },
+    "Consignment": {
+      "title": "Consignment LR",
+      "description": "Simple consignments booking note Form details",
+      "type": "object",
+      "properties": {
+        "tripId": { "type": "string" },
+        "consignorName": { "type": "string" },
+        "consignorMobile": { "type": "string" },
+        "consigneeName": { "type": "string" },
+        "consigneeMobile": { "type": "string" },
+        "materialDescription": { "type": "string" },
+        "weightTons": { "type": "string" },
+        "freightAmount": { "type": "string" },
+        "paymentTerms": { "type": "string", "enum": ["paid", "to_pay", "to_be_billed"] },
+        "status": { "type": "string", "enum": ["active", "cancelled"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["tripId", "consignorName", "consigneeName", "materialDescription", "weightTons", "freightAmount", "paymentTerms", "status"]
+    },
+    "PartyMaster": {
+      "title": "Party Master",
+      "description": "Autosaved party names and mobile numbers for quick LR / Consignment entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "partyName": { "type": "string" },
+        "partyMobile": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "partyName"]
+    },
+    "RouteMaster": {
+      "title": "Route Master",
+      "description": "Autosaved routes for loading and unloading points",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "routeName": { "type": "string" },
+        "loadingPoint": { "type": "string" },
+        "unloadingPoint": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "routeName", "loadingPoint", "unloadingPoint"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User login state and roles"
+    },
+    "/drivers/{driverId}": {
+      "schema": "Driver",
+      "description": "Driver records and onboarding details"
+    },
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "Vehicle master and compliance documents tracking"
+    },
+    "/tripAssignments/{tripId}": {
+      "schema": "TripAssignment",
+      "description": "Assignments matching vehicles and drivers"
+    },
+    "/vehicleInspections/{inspectionId}": {
+      "schema": "VehicleInspection",
+      "description": "Checklists complete before departure"
+    },
+    "/tripMovements/{movementId}": {
+      "schema": "TripMovement",
+      "description": "Chronological milestones reported by drivers"
+    },
+    "/maintenanceTickets/{ticketId}": {
+      "schema": "MaintenanceTicket",
+      "description": "Breakdowns and issues reported on vehicles"
+    },
+    "/podUploads/{podId}": {
+      "schema": "PodUpload",
+      "description": "POD receipts awaiting Operations approval"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "SOS, system alerts and triggers, delay flags for Operations dashboard"
+    },
+    "/loadingConfirmations/{confirmationId}": {
+      "schema": "LoadingConfirmation",
+      "description": "Loading instructions, checkpoint direction and actual weight details"
+    },
+    "/consignments/{consignmentId}": {
+      "schema": "Consignment",
+      "description": "Consignments LR details booking log"
+    },
+    "/partyMaster/{partyId}": {
+      "schema": "PartyMaster",
+      "description": "Autosaved Party names master list"
+    },
+    "/routeMaster/{routeId}": {
+      "schema": "RouteMaster",
+      "description": "Autosaved Routes master list"
+    }
+  }
+}
