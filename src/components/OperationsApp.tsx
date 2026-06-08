@@ -753,13 +753,13 @@ export default function OperationsApp() {
   const [movementHistoryFilter, setMovementHistoryFilter] = useState<'all' | 'running' | 'completed'>('all');
 
   useEffect(() => {
-    if (!showAddLoading && !showEditLoading && !showAddConsignment && !showAssignTrip && !showAddMovement) return;
+    if (!showAddLoading && !showEditLoading && !showAddConsignment && !showAssignTrip) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [showAddLoading, showEditLoading, showAddConsignment, showAssignTrip, showAddMovement]);
+  }, [showAddLoading, showEditLoading, showAddConsignment, showAssignTrip]);
 
   // Rejection details overlay container
   const [rejectingPodId, setRejectingPodId] = useState<string | null>(null);
@@ -2975,7 +2975,7 @@ export default function OperationsApp() {
   };
 
   return (
-    <div className="dnk-desktop-ui w-[96%] max-w-[1800px] mx-auto pb-8 font-sans text-slate-800">
+    <div className="dnk-desktop-ui min-h-screen w-full min-w-0 bg-slate-50 font-sans text-slate-800">
       <style>{`
         .dnk-desktop-ui label {
           color: #1f2937;
@@ -3050,7 +3050,62 @@ export default function OperationsApp() {
         .dnk-desktop-ui .rounded-3xl {
           border-color: #dbe3ec;
         }
+
+        .dnk-desktop-ui .erp-menu-button {
+          min-height: 44px;
+          border-radius: 0.5rem;
+        }
       `}</style>
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[200px] border-r border-slate-200 bg-white px-3 py-5 shadow-sm md:flex md:flex-col lg:w-[180px]">
+        <div className="border-b border-slate-200 pb-4">
+          <span className="block text-[10px] font-black uppercase tracking-widest text-indigo-600">DNK Operations</span>
+          <strong className="mt-1 block text-base font-black text-slate-950">ERP Menu</strong>
+        </div>
+
+        <nav className="mt-5 flex flex-1 flex-col gap-1.5 text-left text-[11px] font-extrabold text-slate-700">
+          <button type="button" onClick={() => setActiveTab('loading')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-amber-50 hover:text-amber-900">
+            <Layers className="h-4 w-4 text-amber-600" />
+            <span>Loading Confirmation</span>
+          </button>
+          <button type="button" onClick={() => setActiveTab('consignments')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-indigo-50 hover:text-indigo-900">
+            <ClipboardList className="h-4 w-4 text-indigo-600" />
+            <span>Booking / New Consignment</span>
+          </button>
+          <button type="button" onClick={() => setActiveTab('tracking')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-emerald-50 hover:text-emerald-900">
+            <Truck className="h-4 w-4 text-emerald-600" />
+            <span>Movement / Dispatch</span>
+          </button>
+          <button type="button" onClick={() => setActiveTab('drivers')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-sky-50 hover:text-sky-900">
+            <Users className="h-4 w-4 text-sky-600" />
+            <span>Driver Master</span>
+          </button>
+          <button type="button" onClick={() => setActiveTab('vehicles')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-rose-50 hover:text-rose-900">
+            <Truck className="h-4 w-4 text-rose-600" />
+            <span>Vehicle Master</span>
+          </button>
+          <button type="button" onClick={() => setActiveTab('workshop')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
+            <Users className="h-4 w-4 text-slate-600" />
+            <span>Party Master</span>
+          </button>
+          <button type="button" onClick={() => setActiveTab('reports')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
+            <MapPin className="h-4 w-4 text-slate-600" />
+            <span>Route Master</span>
+          </button>
+          <button type="button" onClick={() => setActiveTab('alerts')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
+            <ShieldAlert className="h-4 w-4" />
+            <span>Staff/User</span>
+          </button>
+        </nav>
+
+        <div className="border-t border-slate-200 pt-4 text-[11px] text-slate-500">
+          <div className="flex items-center justify-between">
+            <span className="font-bold">Firestore</span>
+            <span className="font-mono font-black text-emerald-600">ONLINE</span>
+          </div>
+        </div>
+      </aside>
+
+      <main className="w-full min-w-0 px-4 py-5 md:ml-[200px] md:w-[calc(100%-200px)] md:px-5 lg:ml-[180px] lg:w-[calc(100%-180px)] lg:px-6">
       {/* OPERATIONS HEADER BANNER BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="text-left">
@@ -3070,8 +3125,9 @@ export default function OperationsApp() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Aesthetic theme customiser select dot items */}
           <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200/60 shadow-sm text-xs">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Accent:</span>
-            <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Theme:</span>
+            <span className="text-[10px] font-extrabold text-slate-700">Light</span>
+            <div className="hidden items-center gap-1.5">
               {[
                 { id: 'indigo', color: 'bg-indigo-600' },
                 { id: 'emerald', color: 'bg-emerald-500' },
@@ -3117,14 +3173,41 @@ export default function OperationsApp() {
         </div>
       </div>
 
-      {/* WORKSPACE OPERATIONS TABS CONTAINER WITH QUICK ACTIONS SIDEBAR */}
-      <section className="w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+      <details className="mb-5 rounded-2xl border border-slate-200 bg-white p-2 text-[11px] font-extrabold text-slate-700 shadow-sm md:hidden">
+        <summary className="cursor-pointer rounded-lg bg-slate-100 px-3 py-2 text-slate-900">ERP Menu</summary>
+        <div className="mt-2 grid grid-cols-1 gap-2">
+          <button type="button" onClick={() => setActiveTab('loading')} className="rounded-lg bg-amber-50 px-3 py-2 text-left text-amber-900">Loading Confirmation</button>
+          <button type="button" onClick={() => setActiveTab('consignments')} className="rounded-lg bg-indigo-50 px-3 py-2 text-left text-indigo-900">Booking / New Consignment</button>
+          <button type="button" onClick={() => setActiveTab('tracking')} className="rounded-lg bg-emerald-50 px-3 py-2 text-left text-emerald-900">Movement / Dispatch</button>
+          <button type="button" onClick={() => setActiveTab('drivers')} className="rounded-lg bg-sky-50 px-3 py-2 text-left text-sky-900">Driver Master</button>
+          <button type="button" onClick={() => setActiveTab('vehicles')} className="rounded-lg bg-rose-50 px-3 py-2 text-left text-rose-900">Vehicle Master</button>
+          <button type="button" onClick={() => setActiveTab('workshop')} className="rounded-lg bg-slate-100 px-3 py-2 text-left">Party Master</button>
+          <button type="button" onClick={() => setActiveTab('reports')} className="rounded-lg bg-slate-100 px-3 py-2 text-left">Route Master</button>
+          <button type="button" onClick={() => setActiveTab('alerts')} className="rounded-lg bg-slate-50 px-3 py-2 text-left text-slate-700">Staff/User</button>
+        </div>
+      </details>
+
+      {/* ERP MAIN WORKSPACE */}
+      <section className="w-full min-w-0">
+        <div className="w-full min-w-0">
           
           {/* Main Workspace Contents (Tabs & Tables Left Column) */}
-          <div className={`${showSidebar ? 'lg:col-span-3' : 'lg:col-span-4'} bg-white rounded-3xl border border-slate-200/55 p-6 shadow-sm min-h-[500px] transition-all duration-300`}>
+          <div className="w-full min-w-0 bg-white rounded-3xl border border-slate-200/55 p-5 shadow-sm min-h-[500px] transition-all duration-300 xl:p-6">
+          <div className="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Right Main Workspace</span>
+              <h3 className="mt-1 text-base font-black text-slate-950">DNK Fleet Dispatch Console</h3>
+            </div>
+            <div className="flex flex-wrap gap-2 text-[11px] font-bold text-slate-500">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">All Truck Activity</span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Search</span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Filters</span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Truck Activity Table</span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">History</span>
+            </div>
+          </div>
           {/* Tab Selector buttons Row with Wrap & Sidebar Toggle */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between border-b border-slate-100 pb-4 gap-4 mb-6">
+          <div className="hidden">
             <div className="flex flex-wrap gap-2 text-slate-500 font-bold text-xs">
               {[
                 { id: 'dispatch', label: '⚛️ ALL TRUCK ACTIVITY', num: 0, isCritical: false as boolean | undefined },
@@ -3246,8 +3329,8 @@ export default function OperationsApp() {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto border border-slate-200 rounded-3xl bg-white">
-                    <table className="min-w-[1200px] w-full text-left border-collapse text-xs">
+                  <div className="w-full min-w-0 max-w-full overflow-x-auto border border-slate-200 rounded-3xl bg-white">
+                    <table className="min-w-max text-left border-collapse text-xs">
                       <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-100">
                         <tr>
                           <th className="p-4">Vehicle No</th>
@@ -3338,6 +3421,53 @@ export default function OperationsApp() {
                       </div>
                     )}
                   </div>
+
+                  <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                    <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900">History</h3>
+                        <p className="text-xs text-slate-500">Recent truck status activity from the live operations audit trail.</p>
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-400">{statusAudits.length} audit records</span>
+                    </div>
+                    <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-2xl border border-slate-200">
+                      <table className="min-w-max text-left text-xs">
+                        <thead className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                          <tr>
+                            <th className="p-3">Time</th>
+                            <th className="p-3">Vehicle</th>
+                            <th className="p-3">Status</th>
+                            <th className="p-3">Trip</th>
+                            <th className="p-3">Remarks</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                          {statusAudits
+                            .slice()
+                            .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
+                            .slice(0, 8)
+                            .map((audit) => (
+                              <tr key={audit.id || `${audit.vehicleNumber}-${audit.timestamp}`} className="hover:bg-slate-50">
+                                <td className="p-3 font-mono text-[11px] text-slate-500">
+                                  {audit.timestamp ? new Date(audit.timestamp).toLocaleString() : '-'}
+                                </td>
+                                <td className="p-3 font-mono font-bold text-slate-900">{audit.vehicleNumber || '-'}</td>
+                                <td className="p-3">
+                                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${statusBadgeClasses[audit.newStatus] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                    {audit.newStatus || '-'}
+                                  </span>
+                                </td>
+                                <td className="p-3 font-mono text-[11px]">{audit.tripId || '-'}</td>
+                                <td className="p-3">{audit.remarks || '-'}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                      {statusAudits.length === 0 && (
+                        <div className="p-8 text-center text-sm text-slate-500">No history records found.</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -3406,8 +3536,8 @@ export default function OperationsApp() {
                   </div>
 
                   {/* LR List Table */}
-                  <div className="overflow-x-auto border border-slate-200 rounded-3xl bg-white">
-                    <table className="min-w-full text-left border-collapse text-xs">
+                  <div className="w-full min-w-0 max-w-full overflow-x-auto border border-slate-200 rounded-3xl bg-white">
+                    <table className="min-w-max text-left border-collapse text-xs">
                       <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-100">
                         <tr>
                           <th className="p-4">LR No</th>
@@ -3524,12 +3654,353 @@ export default function OperationsApp() {
                 </div>
               )}
 
+              {activeTab === 'loading' && (
+                <div className="space-y-6 text-left">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-extrabold text-slate-900">Loading Confirmation</h2>
+                      <p className="text-xs text-slate-500">List-first loading history with existing edit, cancel and delete actions.</p>
+                    </div>
+                    <button type="button" onClick={() => setShowAddLoading(true)} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-pointer">
+                      <Plus className="w-4 h-4" />
+                      New Loading
+                    </button>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+                      <input value={loadingHistorySearch} onChange={(e) => setLoadingHistorySearch(e.target.value)} placeholder="Search loading, vehicle, party, route..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          ['all', 'All'],
+                          ['confirmed', 'Confirmed'],
+                          ['pending', 'Pending'],
+                          ['cancelled', 'Cancelled'],
+                          ['map_saved', 'Map Saved'],
+                          ['map_missing', 'Map Missing']
+                        ].map(([value, label]) => (
+                          <button key={value} type="button" onClick={() => setLoadingHistoryFilter(value as any)} className={`px-3 py-2 rounded-full text-[11px] font-bold ${loadingHistoryFilter === value ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-700'}`}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-3xl border border-slate-200 bg-white">
+                    <table className="min-w-max text-left text-xs">
+                      <thead className="text-[10px] font-black uppercase text-slate-500">
+                        <tr>
+                          <th className="p-3">Loading No</th>
+                          <th className="p-3">Vehicle</th>
+                          <th className="p-3">Driver</th>
+                          <th className="p-3">Party</th>
+                          <th className="p-3">Route</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredLoadingHistory.map(record => (
+                          <tr key={record.id} className="hover:bg-slate-50">
+                            <td className="p-3 font-mono font-bold">{record.loadingNo || record.id}</td>
+                            <td className="p-3 font-mono">{record.vehicleNo || '-'}</td>
+                            <td className="p-3">{record.driverName || '-'}</td>
+                            <td className="p-3">{record.loadingParty || record.partyVendorInfo || '-'}</td>
+                            <td className="p-3">{record.routeDetails || '-'}</td>
+                            <td className="p-3">{record.status || '-'}</td>
+                            <td className="p-3">
+                              <div className="flex flex-wrap gap-1.5">
+                                <button type="button" onClick={() => window.alert(`Loading: ${record.loadingNo || record.id}\nVehicle: ${record.vehicleNo || '-'}\nDriver: ${record.driverName || '-'}\nParty: ${record.loadingParty || record.partyVendorInfo || '-'}\nRoute: ${record.routeDetails || '-'}`)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
+                                <button type="button" onClick={() => startEditLoadingFromRecord(record)} className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">Edit</button>
+                                <button type="button" onClick={() => handleDeleteLoading(record.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 font-bold">Delete</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {filteredLoadingHistory.length === 0 && <div className="p-8 text-center text-sm text-slate-500">No loading records found.</div>}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'tracking' && (
+                <div className="space-y-6 text-left">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-extrabold text-slate-900">Movement / Dispatch</h2>
+                      <p className="text-xs text-slate-500">Movement history first; create movement opens the existing dispatch form.</p>
+                    </div>
+                    <button type="button" onClick={() => setShowAddMovement(true)} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-pointer">
+                      <Plus className="w-4 h-4" />
+                      New Movement
+                    </button>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+                      <input value={movementHistorySearch} onChange={(e) => setMovementHistorySearch(e.target.value)} placeholder="Search movement, vehicle, driver, LR, route..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          ['all', 'All'],
+                          ['running', 'Running'],
+                          ['completed', 'Completed']
+                        ].map(([value, label]) => (
+                          <button key={value} type="button" onClick={() => setMovementHistoryFilter(value as any)} className={`px-3 py-2 rounded-full text-[11px] font-bold ${movementHistoryFilter === value ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-700'}`}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-3xl border border-slate-200 bg-white">
+                    <table className="min-w-max text-left text-xs">
+                      <thead className="text-[10px] font-black uppercase text-slate-500">
+                        <tr>
+                          <th className="p-3">Movement</th>
+                          <th className="p-3">Vehicle</th>
+                          <th className="p-3">Driver</th>
+                          <th className="p-3">LR</th>
+                          <th className="p-3">Route</th>
+                          <th className="p-3">Expected Arrival</th>
+                          <th className="p-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredMovementHistory.map(movement => (
+                          <tr key={movement.id} className="hover:bg-slate-50">
+                            <td className="p-3 font-mono font-bold">{movement.movementNumber || (movement as any).movementId || movement.id}</td>
+                            <td className="p-3 font-mono">{movement.vehicleNumber || '-'}</td>
+                            <td className="p-3">{movement.driverName || '-'}</td>
+                            <td className="p-3 font-mono">{(movement as any).lrNumber || '-'}</td>
+                            <td className="p-3">{(movement as any).routeDetails || movement.route || '-'}</td>
+                            <td className="p-3 font-mono">{movement.expectedArrivalDate || '-'} {movement.expectedArrivalTime || ''}</td>
+                            <td className="p-3">
+                              <button type="button" onClick={() => window.alert(`Movement: ${movement.movementNumber || (movement as any).movementId || movement.id}\nVehicle: ${movement.vehicleNumber || '-'}\nDriver: ${movement.driverName || '-'}\nRoute: ${(movement as any).routeDetails || movement.route || '-'}`)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {filteredMovementHistory.length === 0 && <div className="p-8 text-center text-sm text-slate-500">No movement records found.</div>}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'drivers' && (
+                <div className="space-y-6 text-left">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-extrabold text-slate-900">Driver Master</h2>
+                      <p className="text-xs text-slate-500">Driver directory opens first; New Driver opens the existing onboard form.</p>
+                    </div>
+                    <button type="button" onClick={() => setShowAddDriver(true)} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-pointer">
+                      <Plus className="w-4 h-4" />
+                      New Driver
+                    </button>
+                  </div>
+                  <input type="text" value={driverListSearch} onChange={(e) => setDriverListSearch(e.target.value)} placeholder="Search by name, mobile, or license..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+                  <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-3xl border border-slate-200 bg-white">
+                    <table className="min-w-max text-left text-xs">
+                      <thead className="text-[10px] font-black uppercase text-slate-500">
+                        <tr>
+                          <th className="p-3">Name</th>
+                          <th className="p-3">Mobile</th>
+                          <th className="p-3">DL No</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {drivers.filter(d => {
+                          if (!driverListSearch.trim()) return true;
+                          const q = driverListSearch.toLowerCase();
+                          return [d.name, d.mobile, d.drivingLicenceNumber].some(v => (v || '').toLowerCase().includes(q));
+                        }).map(d => {
+                          const status = (d as any).recordStatus || 'Active';
+                          return (
+                            <tr key={d.id} className="hover:bg-slate-50">
+                              <td className="p-3 font-bold">{d.name}</td>
+                              <td className="p-3 font-mono">{d.mobile}</td>
+                              <td className="p-3">{d.drivingLicenceNumber || '-'}</td>
+                              <td className="p-3">{status}</td>
+                              <td className="p-3">
+                                <div className="flex flex-wrap gap-1.5">
+                                  <button type="button" onClick={() => handleViewDriver(d)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
+                                  <button type="button" onClick={() => openEditDriverFromList(d)} className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">Edit</button>
+                                  {status !== 'Active' ? (
+                                    <button type="button" onClick={() => handleActivateDriver(d.id)} className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold">Activate</button>
+                                  ) : (
+                                    <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 font-bold">Deactivate</button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'vehicles' && (
+                <div className="space-y-6 text-left">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-extrabold text-slate-900">Vehicle Master</h2>
+                      <p className="text-xs text-slate-500">Vehicle directory opens first; New Vehicle opens the existing vehicle form.</p>
+                    </div>
+                    <button type="button" onClick={() => setShowAddVehicle(true)} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-pointer">
+                      <Plus className="w-4 h-4" />
+                      New Vehicle
+                    </button>
+                  </div>
+                  <input type="text" value={vehicleListSearch} onChange={(e) => setVehicleListSearch(e.target.value)} placeholder="Search by Vehicle Number, Driver Name, or Owner Name..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+                  <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-3xl border border-slate-200 bg-white">
+                    <table className="min-w-max text-left text-xs">
+                      <thead className="text-[10px] font-black uppercase text-slate-500">
+                        <tr>
+                          <th className="p-3">Vehicle Number</th>
+                          <th className="p-3">Driver</th>
+                          <th className="p-3">Owner</th>
+                          <th className="p-3">Type</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredVehicles.map(vehicle => {
+                          const linkedDriver = drivers.find(d => d.id === vehicle.linkedDriverId || d.linkedVehicleNumber === vehicle.vehicleNumber);
+                          const status = vehicle.recordStatus || 'Active';
+                          return (
+                            <tr key={vehicle.id} className="hover:bg-slate-50">
+                              <td className="p-3 font-mono font-bold">{vehicle.vehicleNumber}</td>
+                              <td className="p-3">{vehicle.linkedDriverName || linkedDriver?.name || '-'}</td>
+                              <td className="p-3">{vehicle.ownerName || '-'}</td>
+                              <td className="p-3">{vehicle.vehicleType || '-'}</td>
+                              <td className="p-3">{status}</td>
+                              <td className="p-3">
+                                <div className="flex flex-wrap gap-1.5">
+                                  <button type="button" onClick={() => handleViewVehicle(vehicle)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
+                                  <button type="button" onClick={() => openEditVehicleFromList(vehicle)} className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">Edit</button>
+                                  {status !== 'Active' ? (
+                                    <button type="button" onClick={() => handleActivateVehicle(vehicle.id)} className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold">Activate</button>
+                                  ) : (
+                                    <button type="button" onClick={() => handleDeactivateVehicle(vehicle.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 font-bold">Deactivate</button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'workshop' && (
+                <div className="space-y-6 text-left">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-extrabold text-slate-900">Party Master</h2>
+                      <p className="text-xs text-slate-500">Party list opens first; New Party opens the existing party form.</p>
+                    </div>
+                    <button type="button" onClick={() => { resetPartyForm(); setShowPartyMasterModal(true); }} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-pointer">
+                      <Plus className="w-4 h-4" />
+                      New Party
+                    </button>
+                  </div>
+                  <input type="text" value={partySearchQuery} onChange={(e) => setPartySearchQuery(e.target.value)} placeholder="Search party name, city or mobile" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+                  <div className="grid grid-cols-1 gap-3">
+                    {partyMasters
+                      .filter((p) => {
+                        if (!partySearchQuery) return true;
+                        const q = partySearchQuery.toLowerCase();
+                        return p.partyName.toLowerCase().includes(q) || (p.mobileNumber || p.partyMobile || '').toLowerCase().includes(q) || (p.placeCity || '').toLowerCase().includes(q);
+                      })
+                      .map((p) => (
+                        <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <div className="text-xs font-black text-slate-900">{p.partyName}</div>
+                              <div className="mt-1 text-[11px] text-slate-500">{p.partyType || 'CLIENT'} | {p.contactPerson || 'No contact'} | {p.mobileNumber || p.partyMobile || 'No mobile'}</div>
+                              <div className="mt-1 text-[11px] text-slate-500">{p.placeCity || 'Unknown'}{p.state ? `, ${p.state}` : ''}</div>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              <button type="button" onClick={() => window.alert(`Party: ${p.partyName}\nContact: ${p.contactPerson || '-'}\nMobile: ${p.mobileNumber || p.partyMobile || '-'}\nCity: ${p.placeCity || '-'}`)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold">View</button>
+                              <button type="button" onClick={() => handleEditPartyMaster(p)} className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold">Edit</button>
+                              <button type="button" onClick={() => handleDeletePartyMaster(p.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold">Delete</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'reports' && (
+                <div className="space-y-6 text-left">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-extrabold text-slate-900">Route Master</h2>
+                      <p className="text-xs text-slate-500">Saved routes open first; New Route opens the existing route form.</p>
+                    </div>
+                    <button type="button" onClick={() => { resetRouteForm(); setShowRouteMasterModal(true); }} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-pointer">
+                      <Plus className="w-4 h-4" />
+                      New Route
+                    </button>
+                  </div>
+                  <input type="text" value={routeSearchQuery} onChange={(e) => setRouteSearchQuery(e.target.value)} placeholder="Search by city, code, or name..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+                  <div className="grid grid-cols-1 gap-3">
+                    {routeMasters
+                      .filter((r) => {
+                        if (!routeSearchQuery) return true;
+                        const q = routeSearchQuery.toLowerCase();
+                        return (r.routeName || '').toLowerCase().includes(q) || (r.routeCode || '').toLowerCase().includes(q) || (r.fromCity || r.loadingPoint || '').toLowerCase().includes(q) || (r.toCity || r.unloadingPoint || '').toLowerCase().includes(q);
+                      })
+                      .map((r, i) => (
+                        <div key={r.id || `route-page-${i}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <div className="text-xs font-black text-slate-900">{r.fromCity || r.loadingPoint} to {r.toCity || r.unloadingPoint}</div>
+                              <div className="mt-1 text-[11px] text-slate-500">{r.routeCode || 'Uncoded'} | {r.distanceKm ? `${r.distanceKm} km` : 'Distance N/A'}</div>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              <button type="button" onClick={() => window.alert(`Route: ${r.routeName || '-'}\nFrom: ${r.fromCity || r.loadingPoint || '-'}\nTo: ${r.toCity || r.unloadingPoint || '-'}\nCode: ${r.routeCode || '-'}`)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold">View</button>
+                              <button type="button" onClick={() => handleEditRouteMaster(r)} className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold">Edit</button>
+                              <button type="button" onClick={() => handleDeleteRouteMaster(r.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold">Delete</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'alerts' && (
+                <div className="space-y-6 text-left">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-base font-extrabold text-slate-900">Staff/User</h2>
+                      <p className="text-xs text-slate-500">Staff/User list-first shell. No existing Staff/User CRUD workflow is defined in this file.</p>
+                    </div>
+                    <button type="button" className="px-4 py-2.5 bg-slate-200 text-slate-500 font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-not-allowed">
+                      <Plus className="w-4 h-4" />
+                      New Staff/User
+                    </button>
+                  </div>
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+                    Staff/User table will appear here when an existing Staff/User collection and handlers are available.
+                  </div>
+                </div>
+              )}
+
             </>
           )}
           </div>
 
           {/* Quick-Access Forms / Operations Sidebar (Right Column) */}
-          {showSidebar && (
+          {false && showSidebar && (
             <div className="lg:col-span-1 space-y-6 animate-fadeIn">
             <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-5 text-left">
               <div>
@@ -3835,7 +4306,7 @@ export default function OperationsApp() {
                 </p>
               </div>
 
-              <div className="flex gap-2 justify-end pt-4 border-t border-slate-100">
+              <div className="lg:col-span-2 xl:col-span-3 sticky bottom-0 z-20 -mx-6 flex gap-2 justify-end px-6 py-4 border-t border-slate-200 bg-slate-50/95 backdrop-blur">
                 <button
                   type="button"
                   onClick={() => setShowAddDriver(false)}
@@ -3914,10 +4385,10 @@ export default function OperationsApp() {
 
       {/* ==================== CREATE VEHICLE FORM DIALOG SHEET ==================== */}
       {showAddVehicle && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-5xl w-full text-left max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 block">🚛 Vehicle Master</h3>
-            <form onSubmit={handleCreateVehicle} className="space-y-4 pt-4 text-xs">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800">
+          <div className="w-full min-w-0 min-h-screen px-6 py-5 text-left flex flex-col">
+            <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">Vehicle Master</h3>
+            <form onSubmit={handleCreateVehicle} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 py-6 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-500 font-bold block mb-1">Vehicle Reg Number *</label>
@@ -4051,7 +4522,7 @@ export default function OperationsApp() {
                 </div>
               </div>
 
-              <div className="flex gap-2 justify-end pt-4 border-t border-slate-100">
+              <div className="lg:col-span-2 xl:col-span-3 sticky bottom-0 z-20 -mx-6 flex gap-2 justify-end px-6 py-4 border-t border-slate-200 bg-slate-50/95 backdrop-blur">
                 <button
                   type="button"
                   onClick={() => setShowAddVehicle(false)}
@@ -4089,8 +4560,8 @@ export default function OperationsApp() {
                 />
               </div>
 
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
-                <table className="min-w-[900px] w-full text-left border-collapse text-xs">
+              <div className="w-full min-w-0 max-w-full overflow-x-auto border border-slate-200 rounded-2xl bg-white">
+                <table className="min-w-max text-left border-collapse text-xs">
                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-100">
                     <tr>
                       <th className="p-3">Vehicle Number</th>
@@ -4182,9 +4653,9 @@ export default function OperationsApp() {
 
       {/* ==================== PARTY MASTER MODULE DIALOG SHEET ==================== */}
       {showPartyMasterModal && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-5xl w-full text-left max-h-[90vh] overflow-y-auto">
-            <div className="flex flex-col lg:flex-row lg:items-start gap-4 justify-between mb-4">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800">
+          <div className="w-full min-w-0 min-h-screen px-6 py-5 text-left flex flex-col">
+            <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur flex flex-col lg:flex-row lg:items-start gap-4 justify-between border-b border-slate-200 py-4 mb-4">
               <div>
                 <h3 className="text-base font-black text-slate-900">👥 Party Master</h3>
                 <p className="text-[11px] text-slate-500 mt-1">Create, edit and track customer and broker party profiles with courier tracking.</p>
@@ -4497,7 +4968,7 @@ export default function OperationsApp() {
                     />
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 justify-end pt-3 border-t border-slate-200">
+                  <div className="sticky bottom-0 z-20 -mx-5 flex flex-col sm:flex-row gap-3 justify-end px-5 py-4 border-t border-slate-200 bg-slate-50/95 backdrop-blur">
                     <button
                       type="button"
                       onClick={() => { resetPartyForm(); setShowPartyMasterModal(false); }}
@@ -4638,9 +5109,9 @@ export default function OperationsApp() {
 
       {/* ==================== ROUTE MASTER MODULE DIALOG SHEET ==================== */}
       {showRouteMasterModal && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-5xl w-full text-left max-h-[90vh] overflow-y-auto">
-            <div className="flex flex-col lg:flex-row lg:items-start gap-4 justify-between mb-4">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800">
+          <div className="w-full min-w-0 min-h-screen px-6 py-5 text-left flex flex-col">
+            <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur flex flex-col lg:flex-row lg:items-start gap-4 justify-between border-b border-slate-200 py-4 mb-4">
               <div>
                 <h3 className="text-base font-black text-slate-900">🛣️ Route Master</h3>
                 <p className="text-[11px] text-slate-500 mt-1">Manage standard routes, transit days, and distances.</p>
@@ -4740,7 +5211,7 @@ export default function OperationsApp() {
                     </div>
                   </div>
 
-                  <div className="flex gap-3 justify-end pt-3 border-t border-slate-200">
+                  <div className="sticky bottom-0 z-20 -mx-5 flex gap-3 justify-end px-5 py-4 border-t border-slate-200 bg-slate-50/95 backdrop-blur">
                     <button
                       type="button"
                       onClick={() => { resetRouteForm(); setShowRouteMasterModal(false); }}
@@ -5040,8 +5511,8 @@ export default function OperationsApp() {
 
       {/* ==================== MOVEMENT CREATE / HISTORY DIALOG SHEET ==================== */}
       {showAddMovement && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 text-slate-800">
-          <div className="bg-slate-50 rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-5xl w-full text-left max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800">
+          <div className="w-full min-w-0 min-h-screen px-6 py-5 text-left flex flex-col">
             <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">Movement Create</h3>
             <form onSubmit={handleCreateMovement} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 py-6 text-xs">
               <div className="xl:col-span-3">
@@ -5445,10 +5916,10 @@ export default function OperationsApp() {
 
       {/* ==================== EDIT VEHICLE FORM DIALOG SHEET ==================== */}
       {showEditVehicle && editingVehicle && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 text-slate-800" id="edit-vehicle-modal">
-          <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-md w-full text-left max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 block">✏️ Vehicle Registry संपादन (Edit Vehicle)</h3>
-            <form onSubmit={handleEditVehicle} className="space-y-4 pt-4 text-xs">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800" id="edit-vehicle-modal">
+          <div className="w-full min-w-0 min-h-screen px-6 py-5 text-left flex flex-col">
+            <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">Vehicle Registry Edit</h3>
+            <form onSubmit={handleEditVehicle} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 py-6 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-500 font-bold block mb-1 text-slate-400">Vehicle Reg Number (Read-only)</label>
@@ -5581,7 +6052,7 @@ export default function OperationsApp() {
                 </div>
               </div>
 
-              <div className="flex gap-2 justify-end pt-4 border-t border-slate-100">
+              <div className="lg:col-span-2 xl:col-span-3 sticky bottom-0 z-20 -mx-6 flex gap-2 justify-end px-6 py-4 border-t border-slate-200 bg-slate-50/95 backdrop-blur">
                 <button
                   type="button"
                   onClick={() => {
@@ -6975,6 +7446,7 @@ export default function OperationsApp() {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }
