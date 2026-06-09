@@ -299,8 +299,16 @@ export interface Movement {
   vehicleNumber: string;
   driverName: string;
   route: string;
+  routeDetails?: string;
   loadingPoint: string;
   unloadingPoint: string;
+  consigneeName?: string;
+  consigneeMobile?: string;
+  unloadingGoogleMapLocation?: string;
+  eWayBillNumber?: string;
+  eWayBillExpiryDate?: string;
+  reportingDate?: string;
+  reportingTime?: string;
   startDate: string;
   startTime: string;
   startKm: string;

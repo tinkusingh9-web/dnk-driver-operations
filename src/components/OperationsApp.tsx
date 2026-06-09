@@ -577,6 +577,14 @@ export default function OperationsApp() {
     loadingConfirmNo: '',
     lrNumber: '',
     routeDetails: '',
+    consigneeName: '',
+    consigneeMobile: '',
+    unloadingPoint: '',
+    unloadingGoogleMapLocation: '',
+    eWayBillNumber: '',
+    eWayBillExpiryDate: '',
+    reportingDate: '',
+    reportingTime: '',
     startKm: '',
     endKm: '',
     expectedArrivalDate: '',
@@ -2089,6 +2097,15 @@ export default function OperationsApp() {
         loadingConfirmNo: newMovement.loadingConfirmNo || '',
         lrNumber: newMovement.lrNumber || '',
         routeDetails: newMovement.routeDetails || '',
+        consigneeName: newMovement.consigneeName || '',
+        consigneeMobile: newMovement.consigneeMobile || '',
+        unloadingPoint: newMovement.unloadingPoint || selectedTripForMovement.unloadingPoint || '',
+        unloadingGoogleMapLocation: newMovement.unloadingGoogleMapLocation || '',
+        googleMapDestination: newMovement.unloadingGoogleMapLocation || '',
+        eWayBillNumber: newMovement.eWayBillNumber || '',
+        eWayBillExpiryDate: newMovement.eWayBillExpiryDate || '',
+        reportingDate: newMovement.reportingDate || '',
+        reportingTime: newMovement.reportingTime || '',
         startKm: Number(newMovement.startKm) || selectedTripForMovement.startKm || 0,
         endKm: "",
         expectedArrivalDate: newMovement.expectedArrivalDate,
@@ -2948,7 +2965,11 @@ export default function OperationsApp() {
           movement.driverName,
           (movement as any).lrNumber,
           (movement as any).routeDetails,
-          movement.route
+          movement.route,
+          (movement as any).consigneeName,
+          (movement as any).consigneeMobile,
+          (movement as any).eWayBillNumber,
+          (movement as any).reportingDate
         ].some(value => value?.toString().toLowerCase().includes(q));
         if (!matchesSearch) return false;
       }
@@ -3737,7 +3758,7 @@ export default function OperationsApp() {
                   </div>
                   <div className="rounded-3xl border border-slate-200 bg-white p-4">
                     <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-                      <input value={movementHistorySearch} onChange={(e) => setMovementHistorySearch(e.target.value)} placeholder="Search movement, vehicle, driver, LR, route..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm" />
+                      <input value={movementHistorySearch} onChange={(e) => setMovementHistorySearch(e.target.value)} placeholder="Search movement, vehicle, driver, LR, route, consignee, E-Way..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm" />
                       <div className="flex flex-wrap gap-2">
                         {[
                           ['all', 'All'],
@@ -3760,24 +3781,37 @@ export default function OperationsApp() {
                           <th className="p-3">Driver</th>
                           <th className="p-3">LR</th>
                           <th className="p-3">Route</th>
+                          <th className="p-3">Consignee</th>
+                          <th className="p-3">Mobile</th>
+                          <th className="p-3">E-Way Bill</th>
+                          <th className="p-3">E-Way Expiry</th>
+                          <th className="p-3">Reporting</th>
                           <th className="p-3">Expected Arrival</th>
                           <th className="p-3">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredMovementHistory.map(movement => (
-                          <tr key={movement.id} className="hover:bg-slate-50">
-                            <td className="p-3 font-mono font-bold">{movement.movementNumber || (movement as any).movementId || movement.id}</td>
-                            <td className="p-3 font-mono">{movement.vehicleNumber || '-'}</td>
-                            <td className="p-3">{movement.driverName || '-'}</td>
-                            <td className="p-3 font-mono">{(movement as any).lrNumber || '-'}</td>
-                            <td className="p-3">{(movement as any).routeDetails || movement.route || '-'}</td>
-                            <td className="p-3 font-mono">{movement.expectedArrivalDate || '-'} {movement.expectedArrivalTime || ''}</td>
-                            <td className="p-3">
-                              <button type="button" onClick={() => window.alert(`Movement: ${movement.movementNumber || (movement as any).movementId || movement.id}\nVehicle: ${movement.vehicleNumber || '-'}\nDriver: ${movement.driverName || '-'}\nRoute: ${(movement as any).routeDetails || movement.route || '-'}`)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
-                            </td>
-                          </tr>
-                        ))}
+                        {filteredMovementHistory.map(movement => {
+                          const linkedLr = consignments.find(lr => lr.tripId === movement.tripId || lr.id === (movement as any).lrNumber || lr.lrNumber === (movement as any).lrNumber);
+                          return (
+                            <tr key={movement.id} className="hover:bg-slate-50">
+                              <td className="p-3 font-mono font-bold">{movement.movementNumber || (movement as any).movementId || movement.id}</td>
+                              <td className="p-3 font-mono">{movement.vehicleNumber || '-'}</td>
+                              <td className="p-3">{movement.driverName || '-'}</td>
+                              <td className="p-3 font-mono">{(movement as any).lrNumber || linkedLr?.lrNumber || linkedLr?.id || '-'}</td>
+                              <td className="p-3 max-w-[200px] truncate">{(movement as any).routeDetails || movement.route || linkedLr?.routeDetails || '-'}</td>
+                              <td className="p-3">{(movement as any).consigneeName || linkedLr?.consigneeName || '-'}</td>
+                              <td className="p-3 font-mono">{(movement as any).consigneeMobile || linkedLr?.consigneeMobile || '-'}</td>
+                              <td className="p-3 font-mono">{(movement as any).eWayBillNumber || '-'}</td>
+                              <td className="p-3 font-mono">{(movement as any).eWayBillExpiryDate || '-'}</td>
+                              <td className="p-3 font-mono">{(movement as any).reportingDate || '-'} {(movement as any).reportingTime || ''}</td>
+                              <td className="p-3 font-mono">{movement.expectedArrivalDate || '-'} {movement.expectedArrivalTime || ''}</td>
+                              <td className="p-3">
+                                <button type="button" onClick={() => window.alert(`Movement: ${movement.movementNumber || (movement as any).movementId || movement.id}\nVehicle: ${movement.vehicleNumber || '-'}\nDriver: ${movement.driverName || '-'}\nRoute: ${(movement as any).routeDetails || movement.route || linkedLr?.routeDetails || '-'}`)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                     {filteredMovementHistory.length === 0 && <div className="p-8 text-center text-sm text-slate-500">No movement records found.</div>}
@@ -4201,10 +4235,10 @@ export default function OperationsApp() {
 
       {/* ==================== CREATE DRIVER FORM DIALOG SHEET ==================== */}
       {showAddDriver && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-2xl w-full text-left max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 block">� Driver Master</h3>
-            <form onSubmit={handleCreateDriver} className="space-y-4 pt-4 text-xs">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800">
+          <div className="w-full min-w-0 min-h-screen px-6 py-5 text-left flex flex-col">
+            <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">Driver Master</h3>
+            <form onSubmit={handleCreateDriver} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 py-6 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-500 font-bold block mb-1">Driver Name *</label>
@@ -4323,23 +4357,26 @@ export default function OperationsApp() {
               </div>
             </form>
             {/* Driver Directory (searchable) */}
-            <div className="mt-6 border-t pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold">Driver Directory</h4>
-                <div className="text-xs text-slate-500">Total: {drivers.length}</div>
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">Driver Directory</h4>
+                  <p className="text-[11px] text-slate-500">Search and manage all drivers from the drivers collection.</p>
+                </div>
+                <div className="text-xs text-slate-500 font-semibold">Total: {drivers.length}</div>
               </div>
-              <div className="mb-3">
+              <div className="mb-4">
                 <input
                   type="text"
                   value={driverListSearch}
                   onChange={(e) => setDriverListSearch(e.target.value)}
                   placeholder="Search by name, mobile, or license..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400"
                 />
               </div>
-              <div className="overflow-x-auto max-h-60 overflow-y-auto">
-                <table className="min-w-full text-left text-xs">
-                  <thead className="text-slate-500 text-[10px] uppercase">
+              <div className="w-full min-w-0 max-w-full overflow-x-auto border border-slate-200 rounded-2xl bg-white">
+                <table className="min-w-max text-left border-collapse text-xs">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-100">
                     <tr>
                       <th className="p-2">Name</th>
                       <th className="p-2">Mobile</th>
@@ -4348,7 +4385,7 @@ export default function OperationsApp() {
                       <th className="p-2">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="text-slate-700">
+                  <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
                     {drivers.filter(d => {
                       if (!driverListSearch.trim()) return true;
                       const q = driverListSearch.toLowerCase();
@@ -4356,7 +4393,7 @@ export default function OperationsApp() {
                     }).map(d => {
                       const status = (d as any).recordStatus || 'Active';
                       return (
-                        <tr key={d.id} className="border-b">
+                        <tr key={d.id} className="hover:bg-slate-50/75 transition-colors">
                           <td className="p-2 font-bold">{d.name}</td>
                           <td className="p-2 font-mono">{d.mobile}</td>
                           <td className="p-2">{d.drivingLicenceNumber || '—'}</td>
@@ -5516,7 +5553,7 @@ export default function OperationsApp() {
             <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">Movement Create</h3>
             <form onSubmit={handleCreateMovement} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 py-6 text-xs">
               <div className="xl:col-span-3">
-                <label className="text-slate-500 font-bold block mb-1">Active Trip *</label>
+                <label className="text-slate-500 font-bold block mb-1">Active Trip / LR *</label>
                 <select
                   required
                   value={selectedTripForMovement?.id || ''}
@@ -5532,6 +5569,14 @@ export default function OperationsApp() {
                       loadingConfirmNo: linkedLoading?.loadingNo || linkedLoading?.id || '',
                       lrNumber: linkedLr?.lrNumber || linkedLr?.id || '',
                       routeDetails: linkedLr?.routeDetails || linkedLoading?.routeDetails || (trip ? `${trip.loadingPoint} to ${trip.unloadingPoint}` : ''),
+                      consigneeName: linkedLr?.consigneeName || '',
+                      consigneeMobile: linkedLr?.consigneeMobile || '',
+                      unloadingPoint: trip?.unloadingPoint || linkedLr?.consigneeName || '',
+                      unloadingGoogleMapLocation: '',
+                      eWayBillNumber: '',
+                      eWayBillExpiryDate: '',
+                      reportingDate: '',
+                      reportingTime: '',
                       startKm: trip?.startKm?.toString() || ''
                     }));
                   }}
@@ -5540,11 +5585,14 @@ export default function OperationsApp() {
                   <option value="">-- Select active trip --</option>
                   {trips
                     .filter(t => t.status !== 'completed')
-                    .map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.vehicleNumber} - {t.driverName} - {t.loadingPoint} to {t.unloadingPoint}
-                      </option>
-                    ))}
+                    .map(t => {
+                      const linkedLr = consignments.find(lr => lr.tripId === t.id);
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {linkedLr?.lrNumber || linkedLr?.id || 'No LR'} - {t.vehicleNumber} - {t.driverName} - {t.loadingPoint} to {t.unloadingPoint}
+                        </option>
+                      );
+                    })}
                 </select>
               </div>
 
@@ -5584,11 +5632,74 @@ export default function OperationsApp() {
                 />
               </div>
               <div className="xl:col-span-3">
-                <label className="text-slate-500 font-bold block mb-1">Route</label>
+                <label className="text-slate-500 font-bold block mb-1">Route Details</label>
                 <input
                   type="text"
+                  readOnly
                   value={newMovement.routeDetails}
-                  onChange={(e) => setNewMovement(prev => ({ ...prev, routeDetails: e.target.value }))}
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-500"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 font-bold block mb-1">Consignee Name</label>
+                <input type="text" readOnly value={newMovement.consigneeName} className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-500" />
+              </div>
+              <div>
+                <label className="text-slate-500 font-bold block mb-1">Consignee Mobile Number</label>
+                <input type="text" readOnly value={newMovement.consigneeMobile} className="w-full font-mono bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-500" />
+              </div>
+              <div>
+                <label className="text-slate-500 font-bold block mb-1">Unloading Point / Location</label>
+                <input
+                  type="text"
+                  value={newMovement.unloadingPoint}
+                  onChange={(e) => setNewMovement(prev => ({ ...prev, unloadingPoint: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                />
+              </div>
+              <div className="xl:col-span-3">
+                <label className="text-slate-500 font-bold block mb-1">Google Map Location for Unloading Point</label>
+                <input
+                  type="text"
+                  value={newMovement.unloadingGoogleMapLocation}
+                  onChange={(e) => setNewMovement(prev => ({ ...prev, unloadingGoogleMapLocation: e.target.value }))}
+                  placeholder="Paste Google Maps link or coordinates"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 font-bold block mb-1">E-Way Bill Number</label>
+                <input
+                  type="text"
+                  value={newMovement.eWayBillNumber}
+                  onChange={(e) => setNewMovement(prev => ({ ...prev, eWayBillNumber: e.target.value }))}
+                  className="w-full font-mono bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 font-bold block mb-1">E-Way Bill Expiry Date</label>
+                <input
+                  type="date"
+                  value={newMovement.eWayBillExpiryDate}
+                  onChange={(e) => setNewMovement(prev => ({ ...prev, eWayBillExpiryDate: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 font-bold block mb-1">Reporting Date</label>
+                <input
+                  type="date"
+                  value={newMovement.reportingDate}
+                  onChange={(e) => setNewMovement(prev => ({ ...prev, reportingDate: e.target.value }))}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                />
+              </div>
+              <div>
+                <label className="text-slate-500 font-bold block mb-1">Reporting Time</label>
+                <input
+                  type="time"
+                  value={newMovement.reportingTime}
+                  onChange={(e) => setNewMovement(prev => ({ ...prev, reportingTime: e.target.value }))}
                   className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
                 />
               </div>
@@ -5661,7 +5772,7 @@ export default function OperationsApp() {
                       type="text"
                       value={movementHistorySearch}
                       onChange={(e) => setMovementHistorySearch(e.target.value)}
-                      placeholder="Search movement, vehicle, driver, LR, route..."
+                      placeholder="Search movement, vehicle, driver, LR, route, consignee, E-Way..."
                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm"
                     />
                   </div>
@@ -5684,7 +5795,7 @@ export default function OperationsApp() {
                 </div>
               </div>
               <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white">
-                <table className="min-w-[1100px] w-full text-left text-xs">
+                <table className="min-w-[1500px] w-full text-left text-xs">
                   <thead className="text-slate-600 font-black uppercase text-[10px]">
                     <tr>
                       <th className="p-3">Movement</th>
@@ -5693,6 +5804,11 @@ export default function OperationsApp() {
                       <th className="p-3">LR</th>
                       <th className="p-3">Loading Confirm</th>
                       <th className="p-3">Route</th>
+                      <th className="p-3">Consignee</th>
+                      <th className="p-3">Mobile</th>
+                      <th className="p-3">E-Way Bill</th>
+                      <th className="p-3">E-Way Expiry</th>
+                      <th className="p-3">Reporting</th>
                       <th className="p-3">Start KM</th>
                       <th className="p-3">Fuel</th>
                       <th className="p-3">Expected Arrival</th>
@@ -5712,6 +5828,11 @@ export default function OperationsApp() {
                           <td className="p-3 font-mono">{(movement as any).lrNumber || linkedLr?.lrNumber || linkedLr?.id || '-'}</td>
                           <td className="p-3 font-mono">{(movement as any).loadingConfirmNo || linkedLoading?.loadingNo || linkedLoading?.id || '-'}</td>
                           <td className="p-3 max-w-[200px] truncate">{(movement as any).routeDetails || movement.route || linkedLr?.routeDetails || linkedLoading?.routeDetails || '-'}</td>
+                          <td className="p-3">{(movement as any).consigneeName || linkedLr?.consigneeName || '-'}</td>
+                          <td className="p-3 font-mono">{(movement as any).consigneeMobile || linkedLr?.consigneeMobile || '-'}</td>
+                          <td className="p-3 font-mono">{(movement as any).eWayBillNumber || '-'}</td>
+                          <td className="p-3 font-mono">{(movement as any).eWayBillExpiryDate || '-'}</td>
+                          <td className="p-3 font-mono">{(movement as any).reportingDate || '-'} {(movement as any).reportingTime || ''}</td>
                           <td className="p-3 font-mono">{movement.startKm || (movement as any).startKm || '-'}</td>
                           <td className="p-3">{movement.fuelIssued || (movement as any).fuelIssuedLiters || '-'}</td>
                           <td className="p-3 font-mono">
@@ -5773,10 +5894,10 @@ export default function OperationsApp() {
 
       {/* ==================== EDIT DRIVER FORM DIALOG SHEET ==================== */}
       {showEditDriver && editingDriver && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 text-slate-800" id="edit-driver-modal">
-          <div className="bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 max-w-2xl w-full text-left max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 block">✏️ Driver Profile संपादन (Edit Profile)</h3>
-            <form onSubmit={handleEditDriver} className="space-y-4 pt-4 text-xs">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800" id="edit-driver-modal">
+          <div className="w-full min-w-0 min-h-screen px-6 py-5 text-left flex flex-col">
+            <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">Driver Profile Edit</h3>
+            <form onSubmit={handleEditDriver} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 py-6 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-500 font-bold block mb-1">Driver Name *</label>
@@ -5889,7 +6010,7 @@ export default function OperationsApp() {
                 </select>
               </div>
 
-              <div className="flex gap-2 justify-end pt-4 border-t border-slate-100">
+              <div className="lg:col-span-2 xl:col-span-3 sticky bottom-0 z-20 -mx-6 flex gap-2 justify-end px-6 py-4 border-t border-slate-200 bg-slate-50/95 backdrop-blur">
                 <button
                   type="button"
                   onClick={() => {
