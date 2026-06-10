@@ -7,15 +7,8 @@ import DriverApp from './components/DriverApp';
 import OperationsApp from './components/OperationsApp';
 import {
   Truck,
-  Layers,
-  Settings,
-  HelpCircle,
   Smartphone,
-  Monitor,
-  CheckCircle,
-  ArrowRight,
-  Database,
-  Users
+  Monitor
 } from 'lucide-react';
 
 export default function App() {
@@ -180,51 +173,6 @@ export default function App() {
           </div>
         </div>
       </header>
-
-      {/* COMPACT & POLISHED SYSTEM GUIDE RIBBON */}
-      <section className="max-w-7xl mx-auto px-6 mt-6 w-full text-left">
-        <div className="bg-gradient-to-r from-indigo-50/50 to-slate-50 border border-indigo-100/60 rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-white rounded-xl shadow-sm border border-indigo-100/45">
-              <HelpCircle className="w-4.5 h-4.5 text-indigo-600 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] bg-indigo-100/80 font-bold text-indigo-700 font-mono px-2 py-0.5 rounded uppercase">Bilingual</span>
-                <h4 className="text-xs font-extrabold text-slate-800 tracking-tight">त्वरित निर्देश (Guided Setup Sandbox)</h4>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5 max-w-2xl leading-normal">
-                All changes sync in real-time across devices. Try the complete driver workflow by seeding demo data:
-              </p>
-              
-              {/* Process line layout steps */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 mt-3 text-[10px] font-bold text-slate-600">
-                <span className="flex items-center gap-1.5 bg-white/70 hover:bg-white px-2 py-1 rounded-lg border border-slate-100 transition-all">
-                  <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-700 text-[9px] flex items-center justify-center font-black">1</span>
-                  <span>Click <strong className="text-slate-900">Seed Demo Data</strong> in Operations Board</span>
-                </span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-300 hidden sm:inline" />
-                <span className="flex items-center gap-1.5 bg-white/70 hover:bg-white px-2 py-1 rounded-lg border border-slate-100 transition-all">
-                  <span className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-700 text-[9px] flex items-center justify-center font-black">2</span>
-                  <span>Log in on Driver Portal with <strong className="text-indigo-700 font-mono">9999900002</strong></span>
-                </span>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-300 hidden sm:inline" />
-                <span className="flex items-center gap-1.5 bg-white/70 hover:bg-white px-2 py-1 rounded-lg border border-slate-100 transition-all">
-                  <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 text-[9px] flex items-center justify-center font-black">3</span>
-                  <span>Inspect, Load truck, report delays, or sign the digital POD receipt</span>
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 text-[10px] bg-white px-4 py-2 rounded-xl text-slate-500 border border-slate-100 shadow-sm font-mono self-stretch lg:self-auto justify-center">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 relative flex">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            </span>
-            <span className="text-slate-700 font-bold">PERSISTENT SYNC ON</span>
-          </div>
-        </div>
-      </section>
 
       {/* CORE FRAME LAYOUT */}
       <main className="flex-grow max-w-7xl mx-auto px-6 py-6 w-full flex items-start justify-center">
