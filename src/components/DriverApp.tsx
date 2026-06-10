@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { AppUser, DriverMaster, LoadingConfirmation, TripAssignment, VehicleInspection, TripMovement, MaintenanceTicket, PodUpload, VehicleMaster } from '../types';
 import { compressImage, formatTime } from '../utils/imageCompressor';
+import { getTruckFlagStyle, truckFlagBadgeClassName } from '../utils/truckFlagStyle';
 import SignatureCanvas from './SignatureCanvas';
 import AudioRecorder from './AudioRecorder';
 
@@ -1139,7 +1140,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                       <span className="text-[9px] text-indigo-300 font-bold uppercase tracking-wider block">Current Truck Flag</span>
                       <strong className="text-[11px] text-white font-medium block mt-0.5">{activeVehicle.statusFlag}</strong>
                     </div>
-                    <span className="shrink-0 px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-mono text-[10px] font-black animate-pulse uppercase tracking-wider">
+                    <span className={`${truckFlagBadgeClassName} shrink-0 font-mono tracking-wider`} style={getTruckFlagStyle(activeVehicle.statusFlag)}>
                       {activeVehicle.statusFlag}
                     </span>
                   </div>
@@ -1255,7 +1256,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                          activeVehicle.statusFlag}
                       </strong>
                     </div>
-                    <span className="shrink-0 px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-mono text-[10px] font-black animate-pulse uppercase tracking-wider">
+                    <span className={`${truckFlagBadgeClassName} shrink-0 font-mono tracking-wider`} style={getTruckFlagStyle(activeVehicle.statusFlag)}>
                       🚩 {activeVehicle.statusFlag}
                     </span>
                   </div>

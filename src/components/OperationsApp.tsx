@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { DriverMaster, VehicleMaster, TripAssignment, MaintenanceTicket, PodUpload, Notification, LoadingConfirmation, Consignment, PartyMaster, RouteMaster, Movement } from '../types';
 import { formatTime } from '../utils/imageCompressor';
+import { getTruckFlagStyle, truckFlagBadgeClassName } from '../utils/truckFlagStyle';
 
 export const normalizeRouteSearchText = (text: string): string =>
   text
@@ -355,19 +356,6 @@ export default function OperationsApp() {
     }
   };
 
-  const statusBadgeClasses: Record<string, string> = {
-    'LOADING FIND': 'bg-slate-100 text-slate-700 border-slate-200',
-    'LOADING CONFIRM': 'bg-sky-50 text-sky-900 border-sky-200',
-    'LOADING DONE': 'bg-orange-50 text-orange-800 border-orange-200',
-    'MOVEMENT PENDING': 'bg-violet-50 text-violet-800 border-violet-200',
-    'RUNNING': 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    'LATE': 'bg-rose-50 text-rose-800 border-rose-200',
-    'UNLOADING REPORTING': 'bg-yellow-50 text-yellow-900 border-yellow-200',
-    'UNLOADING DONE': 'bg-emerald-900 text-white border-emerald-800',
-    'MAINTENANCE': 'bg-slate-950 text-white border-slate-800',
-    'WITHOUT DRIVER': 'bg-slate-100 text-slate-700 border-slate-200'
-  };
-
   const parseEtaDeadline = (trip: TripAssignment) => {
     if (!trip?.eta) return null;
     const normalized = trip.eta.trim();
@@ -444,7 +432,7 @@ export default function OperationsApp() {
     const status = getVehicleDisplayStatus(vehicle);
     return {
       label: status,
-      classes: statusBadgeClasses[status] || statusBadgeClasses['WITHOUT DRIVER']
+      style: getTruckFlagStyle(status)
     };
   };
 
@@ -2436,6 +2424,40 @@ export default function OperationsApp() {
     setEditingRoute(null);
   };
 
+  const openAllTruckActivityDashboard = () => {
+    setActiveTab('dispatch');
+    setShowAddLoading(false);
+    setShowEditLoading(false);
+    setShowAddConsignment(false);
+    setShowEditConsignment(false);
+    setShowAssignTrip(false);
+    setShowAddMovement(false);
+    setShowAddVehicle(false);
+    setShowEditVehicle(false);
+    setShowAddDriver(false);
+    setShowEditDriver(false);
+    setShowAddPartyMaster(false);
+    setShowPartyMasterModal(false);
+    setShowAddRouteMaster(false);
+    setShowRouteMasterModal(false);
+
+    setEditingLoading(null);
+    setEditingConsignment(null);
+    setEditingVehicle(null);
+    setEditingDriver(null);
+    setSelectedTripForMovement(null);
+    setSelectedLrForPrint(null);
+    setSelectedLoadingParty(null);
+    setShowPartySuggestions(false);
+    clearVehicleAutocomplete();
+    resetPartyForm();
+    resetRouteForm();
+    setIsViewOnlyDriver(false);
+    setIsViewOnlyVehicle(false);
+    setSearchQuery('');
+    setActivityRefreshTick((prev) => prev + 1);
+  };
+
   const handleEditRouteMaster = (route: RouteMaster) => {
     setEditingRoute(route);
     setRouteForm({
@@ -3220,7 +3242,13 @@ export default function OperationsApp() {
               <h3 className="mt-1 text-base font-black text-slate-950">DNK Fleet Dispatch Console</h3>
             </div>
             <div className="flex flex-wrap gap-2 text-[11px] font-bold text-slate-500">
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">All Truck Activity</span>
+              <button
+                type="button"
+                onClick={openAllTruckActivityDashboard}
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-left font-bold text-slate-500 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+              >
+                All Truck Activity
+              </button>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Search</span>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Filters</span>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Truck Activity Table</span>
@@ -3237,6 +3265,10 @@ export default function OperationsApp() {
                 <button
                   key={tab.id}
                   onClick={() => {
+                    if (tab.id === 'dispatch') {
+                      openAllTruckActivityDashboard();
+                      return;
+                    }
                     setActiveTab(tab.id as any);
                     setSearchQuery('');
                   }}
@@ -3378,7 +3410,7 @@ export default function OperationsApp() {
                               <td className="p-4 font-mono text-slate-900">{row.vehicle.vehicleNumber}</td>
                               <td className="p-4">{row.driver?.name || row.trip?.driverName || 'N/A'}</td>
                               <td className="p-4">
-                                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold uppercase ${badge.classes}`}>
+                                <span className={truckFlagBadgeClassName} style={badge.style}>
                                   {badge.label}
                                 </span>
                               </td>
@@ -3474,7 +3506,7 @@ export default function OperationsApp() {
                                 </td>
                                 <td className="p-3 font-mono font-bold text-slate-900">{audit.vehicleNumber || '-'}</td>
                                 <td className="p-3">
-                                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase ${statusBadgeClasses[audit.newStatus] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                  <span className={truckFlagBadgeClassName} style={getTruckFlagStyle(audit.newStatus)}>
                                     {audit.newStatus || '-'}
                                   </span>
                                 </td>
@@ -3905,13 +3937,18 @@ export default function OperationsApp() {
                         {filteredVehicles.map(vehicle => {
                           const linkedDriver = drivers.find(d => d.id === vehicle.linkedDriverId || d.linkedVehicleNumber === vehicle.vehicleNumber);
                           const status = vehicle.recordStatus || 'Active';
+                          const truckFlag = getVehicleDisplayStatus(vehicle);
                           return (
                             <tr key={vehicle.id} className="hover:bg-slate-50">
                               <td className="p-3 font-mono font-bold">{vehicle.vehicleNumber}</td>
                               <td className="p-3">{vehicle.linkedDriverName || linkedDriver?.name || '-'}</td>
                               <td className="p-3">{vehicle.ownerName || '-'}</td>
                               <td className="p-3">{vehicle.vehicleType || '-'}</td>
-                              <td className="p-3">{status}</td>
+                              <td className="p-3">
+                                <span className={truckFlagBadgeClassName} style={getTruckFlagStyle(truckFlag)}>
+                                  {truckFlag}
+                                </span>
+                              </td>
                               <td className="p-3">
                                 <div className="flex flex-wrap gap-1.5">
                                   <button type="button" onClick={() => handleViewVehicle(vehicle)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
@@ -4613,9 +4650,15 @@ export default function OperationsApp() {
                     {filteredVehicles.map((vehicle) => {
                       const linkedDriver = drivers.find(d => d.id === vehicle.linkedDriverId || d.linkedVehicleNumber === vehicle.vehicleNumber);
                       const recordStatus = vehicle.recordStatus || 'Active';
+                      const truckFlag = getVehicleDisplayStatus(vehicle);
                       return (
                         <tr key={vehicle.id} className="hover:bg-slate-50/75 transition-colors">
-                          <td className="p-3 font-mono font-bold text-slate-900">{vehicle.vehicleNumber}</td>
+                          <td className="p-3">
+                            <div className="font-mono font-bold text-slate-900">{vehicle.vehicleNumber}</div>
+                            <span className={`${truckFlagBadgeClassName} mt-1`} style={getTruckFlagStyle(truckFlag)}>
+                              {truckFlag}
+                            </span>
+                          </td>
                           <td className="p-3">{vehicle.linkedDriverName || linkedDriver?.name || 'N/A'}</td>
                           <td className="p-3">{vehicle.ownerName || 'N/A'}</td>
                           <td className="p-3">
@@ -6265,7 +6308,9 @@ export default function OperationsApp() {
                               <div className="text-[11px] text-slate-500">{v.vehicleType}</div>
                             </div>
                             <div className="text-[11px]">
-                              <span className="text-slate-400">{v.statusFlag}</span>
+                              <span className={truckFlagBadgeClassName} style={getTruckFlagStyle(v.statusFlag)}>
+                                {v.statusFlag || 'Unknown'}
+                              </span>
                             </div>
                           </div>
                           <button
@@ -6290,8 +6335,18 @@ export default function OperationsApp() {
                     <div className="font-semibold text-slate-900">Selected Vehicle Info</div>
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       <div><strong>Number:</strong> {selectedLoadingVehicle.vehicleNumber}</div>
-                      <div><strong>Raw Status:</strong> {selectedLoadingVehicle.statusFlag || 'N/A'}</div>
-                      <div><strong>Derived Status:</strong> {getVehicleDisplayStatus(selectedLoadingVehicle)}</div>
+                      <div>
+                        <strong>Raw Status:</strong>{' '}
+                        <span className={truckFlagBadgeClassName} style={getTruckFlagStyle(selectedLoadingVehicle.statusFlag)}>
+                          {selectedLoadingVehicle.statusFlag || 'Unknown'}
+                        </span>
+                      </div>
+                      <div>
+                        <strong>Derived Status:</strong>{' '}
+                        <span className={truckFlagBadgeClassName} style={getTruckFlagStyle(getVehicleDisplayStatus(selectedLoadingVehicle))}>
+                          {getVehicleDisplayStatus(selectedLoadingVehicle)}
+                        </span>
+                      </div>
                       <div><strong>Type:</strong> {selectedLoadingVehicle.vehicleType || 'N/A'}</div>
                       <div><strong>Driver:</strong> {selectedLoadingVehicle.linkedDriverName || selectedLoadingVehicle.linkedDriverId || 'None'}</div>
                       <div><strong>Driver Mobile:</strong> {drivers.find(d => d.id === selectedLoadingVehicle.linkedDriverId)?.mobile || 'Unknown'}</div>
@@ -6304,7 +6359,14 @@ export default function OperationsApp() {
                     <div><strong>Search Query:</strong> {vehicleSearch || 'EMPTY'}</div>
                     <div><strong>Suggestion Count:</strong> {suggestionCount}</div>
                     <div><strong>Highlighted Index:</strong> {highlightedSuggestionIndex >= 0 ? highlightedSuggestionIndex : 'none'}</div>
-                    <div><strong>Derived Vehicle Status:</strong> {selectedLoadingVehicle ? getVehicleDisplayStatus(selectedLoadingVehicle) : 'none'}</div>
+                    <div>
+                      <strong>Derived Vehicle Status:</strong>{' '}
+                      {selectedLoadingVehicle ? (
+                        <span className={truckFlagBadgeClassName} style={getTruckFlagStyle(getVehicleDisplayStatus(selectedLoadingVehicle))}>
+                          {getVehicleDisplayStatus(selectedLoadingVehicle)}
+                        </span>
+                      ) : 'none'}
+                    </div>
                     <div className="sm:col-span-2"><strong>Selected Vehicle:</strong> {selectedLoadingVehicle ? `${selectedLoadingVehicle.vehicleNumber} (${getVehicleDisplayStatus(selectedLoadingVehicle)})` : 'none'}</div>
                   </div>
                 </div>
