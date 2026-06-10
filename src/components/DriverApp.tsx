@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  auth,
   db,
   handleFirestoreError,
   OperationType
 } from '../firebase';
-import {
-  signInWithCustomToken,
-  signOut
-} from 'firebase/auth';
 import {
   collection,
   doc,
@@ -35,7 +30,6 @@ import {
   Wrench,
   AlertTriangle,
   FileCheck,
-  User,
   Phone,
   LogOut,
   Map,
@@ -74,12 +68,168 @@ const getGoogleMapUrl = (location: string): string => {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmedLocation)}`;
 };
 
+const driverLightThemeStyles = `
+  .dnk-driver-light {
+    background: #F8FAFC !important;
+    color: #111827 !important;
+  }
+
+  .dnk-driver-light [class*="bg-slate-950"],
+  .dnk-driver-light [class*="bg-slate-900"],
+  .dnk-driver-light [class*="bg-slate-800"],
+  .dnk-driver-light [class*="bg-indigo-950"],
+  .dnk-driver-light [class*="bg-emerald-950"] {
+    background: #FFFFFF !important;
+  }
+
+  .dnk-driver-light [class*="bg-gradient-to"] {
+    background-image: none !important;
+    background-color: #FFFFFF !important;
+  }
+
+  .dnk-driver-light [class*="bg-white/"],
+  .dnk-driver-light [class*="bg-indigo-500/"],
+  .dnk-driver-light [class*="bg-emerald-500/"],
+  .dnk-driver-light [class*="bg-amber-500/"],
+  .dnk-driver-light [class*="bg-rose-500/"] {
+    background-color: #EEF2FF !important;
+  }
+
+  .dnk-driver-light [class*="border-white/"],
+  .dnk-driver-light [class*="border-slate-"],
+  .dnk-driver-light [class*="border-indigo-500/"],
+  .dnk-driver-light [class*="border-emerald-500/"],
+  .dnk-driver-light [class*="border-amber-500/"],
+  .dnk-driver-light [class*="border-rose-500/"] {
+    border-color: #CBD5E1 !important;
+  }
+
+  .dnk-driver-light [class*="text-white"],
+  .dnk-driver-light [class*="text-slate-100"],
+  .dnk-driver-light [class*="text-slate-200"],
+  .dnk-driver-light [class*="text-slate-300"] {
+    color: #111827 !important;
+  }
+
+  .dnk-driver-light label,
+  .dnk-driver-light [class*="text-slate-400"],
+  .dnk-driver-light [class*="text-slate-500"] {
+    color: #334155 !important;
+  }
+
+  .dnk-driver-light label,
+  .dnk-driver-light [class*="text-[9px]"],
+  .dnk-driver-light [class*="text-[10px]"] {
+    font-size: 12px !important;
+  }
+
+  .dnk-driver-light input,
+  .dnk-driver-light textarea,
+  .dnk-driver-light select {
+    background: #FFFFFF !important;
+    color: #111827 !important;
+    border-color: #CBD5E1 !important;
+    font-size: 14px !important;
+  }
+
+  .dnk-driver-light input::placeholder,
+  .dnk-driver-light textarea::placeholder {
+    color: #94A3B8 !important;
+  }
+
+  .dnk-driver-light button {
+    font-size: 14px;
+  }
+
+  .dnk-driver-light [class*="bg-indigo-600"],
+  .dnk-driver-light [class*="bg-indigo-700"],
+  .dnk-driver-light [class*="hover:bg-indigo-700"] {
+    background-color: #4F46E5 !important;
+    color: #FFFFFF !important;
+  }
+
+  .dnk-driver-light [class*="bg-slate-700"] {
+    background-color: #E2E8F0 !important;
+    color: #111827 !important;
+  }
+
+  .dnk-driver-light .driver-brand-title,
+  .dnk-driver-light .driver-brand-subtitle {
+    font-size: 0 !important;
+  }
+
+  .dnk-driver-light .driver-brand-title::before {
+    content: "DNK TRANS LOGISTICS";
+    display: block;
+    color: #111827;
+    font-size: 20px;
+    line-height: 1.1;
+    font-weight: 900;
+  }
+
+  .dnk-driver-light .driver-brand-subtitle::before {
+    content: "DRIVER PORTAL";
+    display: block;
+    color: #334155;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+  }
+
+  .dnk-driver-light .driver-mobile-label,
+  .dnk-driver-light .driver-name-label,
+  .dnk-driver-light .driver-otp-label,
+  .dnk-driver-light .driver-get-otp,
+  .dnk-driver-light .driver-verify-otp,
+  .dnk-driver-light .driver-login-button {
+    font-size: 0 !important;
+  }
+
+  .dnk-driver-light .driver-mobile-label::before {
+    content: "मोबाइल नंबर / Mobile No.";
+  }
+
+  .dnk-driver-light .driver-name-label::before {
+    content: "ड्राइवर नाम / Driver Name";
+  }
+
+  .dnk-driver-light .driver-otp-label::before {
+    content: "OTP दर्ज करें / Enter OTP";
+  }
+
+  .dnk-driver-light .driver-get-otp::before {
+    content: "OTP प्राप्त करें / Get OTP";
+  }
+
+  .dnk-driver-light .driver-verify-otp::before {
+    content: "OTP सत्यापित करें / Verify OTP";
+  }
+
+  .dnk-driver-light .driver-login-button::before {
+    content: "लॉगिन करें / Login";
+  }
+
+  .dnk-driver-light .driver-mobile-label::before,
+  .dnk-driver-light .driver-name-label::before,
+  .dnk-driver-light .driver-otp-label::before {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .dnk-driver-light .driver-get-otp::before,
+  .dnk-driver-light .driver-verify-otp::before,
+  .dnk-driver-light .driver-login-button::before {
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 800;
+  }
+`;
+
 export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: DriverAppProps) {
   // Authentication states
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [driverNameInput, setDriverNameInput] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
   // Active sync lists
@@ -391,87 +541,53 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
     return () => unsubscribeVehicle();
   }, [activeTrip, activeLoadingConfirmation]);
 
-  // Handle Mock Phone + Verification login flow
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  // Admin-controlled Driver Master OTP login flow
+  const handleDriverOtpLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || phone.length < 10) {
-      alert("कृपया सही मोबाइल नंबर भरें (Please enter a valid 10-digit mobile number)");
+    const formattedPhone = phone.trim();
+    if (!formattedPhone || formattedPhone.length < 10) {
+      alert("Please enter a valid 10-digit mobile number");
       return;
     }
-    setAuthLoading(true);
-    // Simulate sending OTP on phone screen
-    setTimeout(() => {
-      setIsOtpSent(true);
-      setAuthLoading(false);
-    }, 1000);
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
     if (!otp) {
-      alert("ओटीपी दर्ज करें (Please enter OTP)");
+      alert("Please enter OTP");
       return;
     }
 
     setAuthLoading(true);
-    // Simulate verification
-    setTimeout(async () => {
-      try {
-        // Register or retrieve user
-        const formattedPhone = phone.trim();
-        const fakeUid = "dr_uid_" + formattedPhone;
-
-        const userDocRef = doc(db, 'users', fakeUid);
-        const userSnap = await getDoc(userDocRef);
-
-        let resolvedUser: AppUser;
-
-        if (userSnap.exists()) {
-          resolvedUser = userSnap.data() as AppUser;
-        } else {
-          // New driver, register profile details
-          if (!driverNameInput) {
-            setAuthLoading(false);
-            alert("नया चालक प्रोफाइल! कृपया नाम दर्ज करें (New profile! Name is required)");
-            return;
-          }
-          resolvedUser = {
-            uid: fakeUid,
-            name: driverNameInput,
-            mobile: formattedPhone,
-            role: 'driver',
-            status: 'active',
-            createdAt: new Date().toISOString()
-          };
-          await setDoc(userDocRef, resolvedUser);
-          
-          // Also register under drivers master auto collection matching the specs
-          const driverCode = "DR-" + Math.floor(1000 + Math.random() * 9000);
-          await setDoc(doc(db, 'drivers', fakeUid), {
-            id: fakeUid,
-            driverCode,
-            name: driverNameInput,
-            mobile: formattedPhone,
-            alternateMobile: '',
-            address: 'Added via mobile portal registration',
-            aadhaarNumber: '',
-            panNumber: '',
-            drivingLicenceNumber: '',
-            licenceExpiryDate: '',
-            joiningDate: new Date().toISOString().split('T')[0],
-            driverStatus: 'available',
-            createdAt: new Date().toISOString()
-          });
-        }
-
-        onLoginSuccess(resolvedUser);
-      } catch (err) {
-        console.error("Login verification failed", err);
-        alert("सत्यापन त्रुटि, कृपया पुनः प्रयास करें (Verification error, please try again)");
-      } finally {
-        setAuthLoading(false);
+    try {
+      const driverQuery = query(collection(db, 'drivers'), where('mobile', '==', formattedPhone));
+      const driverSnap = await getDocs(driverQuery);
+      if (driverSnap.empty) {
+        alert("Driver mobile not found. Please contact Operations Admin.");
+        return;
       }
-    }, 1200);
+
+      const driverDoc = driverSnap.docs[0];
+      const driver = { id: driverDoc.id, ...driverDoc.data() } as DriverMaster;
+      if (driver.otpActive !== true) {
+        alert("Driver OTP is inactive. Please contact Operations Admin.");
+        return;
+      }
+      if ((driver.loginOtp || '').trim() !== otp.trim()) {
+        alert("Invalid OTP. Please check with Operations Admin.");
+        return;
+      }
+
+      onLoginSuccess({
+        uid: driver.id,
+        name: driver.name,
+        mobile: driver.mobile,
+        role: 'driver',
+        status: driver.driverStatus === 'inactive' ? 'inactive' : 'active',
+        createdAt: driver.createdAt || new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("Driver OTP login failed", err);
+      alert("Verification error, please try again");
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   // Trigger immediate SOS Notification alerting the operations desk
@@ -886,7 +1002,8 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
           <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-700"></div>
         </div>
 
-        <div className="bg-slate-950 text-white rounded-[2.5rem] overflow-hidden min-h-[640px] flex flex-col justify-between relative font-sans text-xs">
+        <div className="dnk-driver-light bg-slate-950 text-white rounded-[2.5rem] overflow-hidden min-h-[640px] flex flex-col justify-between relative font-sans text-xs">
+          <style>{driverLightThemeStyles}</style>
           
           {/* Header Segment */}
           <div className="bg-slate-900 px-6 py-9 text-center relative overflow-hidden border-b border-white/5">
@@ -896,111 +1013,61 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
             <div className="mx-auto w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white mb-3 backdrop-blur-md">
               <Truck className="w-6 h-6 text-indigo-400 animate-pulse" />
             </div>
-            <h1 className="text-base font-extrabold tracking-tight text-white font-sans">
+            <h1 className="driver-brand-title text-[20px] font-extrabold tracking-tight text-white font-sans leading-tight">
               डीएनके ड्राइवर पोर्टल
             </h1>
-            <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase font-mono mt-0.5">
+            <p className="driver-brand-subtitle text-[13px] text-slate-400 font-bold tracking-widest uppercase font-mono mt-1">
               DNK DRIVER APP
             </p>
           </div>
 
           {/* Form Actions scroll wrapper */}
           <div className="p-6 flex-grow flex flex-col justify-center space-y-5 bg-slate-950">
-            {!isOtpSent ? (
-              <form onSubmit={handlePhoneSubmit} className="space-y-4">
-                <div className="text-left space-y-1.5">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    मोबाइल नंबर (Driver Mobile No.)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-300 font-bold border-r border-white/5 pr-2.5">
-                      +91
-                    </span>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      placeholder="9999900002"
-                      className="w-full text-sm font-bold bg-white/5 hover:bg-white/10 border border-white/10 focus:border-indigo-500 rounded-xl py-3 pl-16 pr-3.5 text-white shadow-inner focus:outline-none focus:ring-1 focus:ring-indigo-500 tracking-wider font-mono"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="text-left space-y-1.5">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    चालक का नाम (Driver Name - New Profiles)
-                  </label>
-                  <div className="relative">
-                    <User className="absolute top-3.5 left-3 text-slate-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      value={driverNameInput}
-                      onChange={(e) => setDriverNameInput(e.target.value)}
-                      placeholder="नाम दर्ज करें (Ramesh, Suresh etc)"
-                      className="w-full text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 focus:border-indigo-500 rounded-xl py-3 pl-9 pr-3 text-white shadow-inner focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-98 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/10 transition-all text-xs tracking-wide flex items-center justify-center gap-2 cursor-pointer font-sans"
-                >
-                  {authLoading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "ओटीपी प्राप्त करें (Request OTP Code)"
-                  )}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-4 animate-fade-in text-left">
-                <div className="bg-white/5 border border-white/5 px-3 py-2.5 rounded-xl text-center mb-2">
-                  <p className="text-[10px] text-slate-400">
-                    OTP sent to <strong className="text-slate-200">+91 {phone}</strong>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setIsOtpSent(false)}
-                    className="text-[10px] text-indigo-400 font-bold underline cursor-pointer mt-0.5"
-                  >
-                    बदलें (Change Number)
-                  </button>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">
-                    दर्ज करें 4-अंकीय ओटीपी (4-Digit OTP)
-                  </label>
+            <form onSubmit={handleDriverOtpLogin} className="space-y-4 text-left">
+              <div className="text-left space-y-1.5">
+                <label className="driver-mobile-label block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  ?????? ???? / Mobile No.
+                </label>
+                <div className="relative">
+                  <Phone className="absolute top-3.5 left-3 text-slate-400 w-4 h-4" />
                   <input
-                    type="password"
-                    maxLength={4}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="1234"
-                    className="w-full text-center text-xl font-bold bg-white/5 focus:bg-white/10 border border-white/10 rounded-xl py-3 text-white focus:outline-none tracking-widest focus:ring-1 focus:ring-indigo-500"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="9999900002"
+                    className="w-full text-sm font-bold bg-white/5 hover:bg-white/10 border border-white/10 focus:border-indigo-500 rounded-xl py-3 pl-9 pr-3.5 text-white shadow-inner focus:outline-none focus:ring-1 focus:ring-indigo-500 tracking-wider font-mono"
                     required
                   />
-                  <p className="text-[9px] text-center text-slate-500 mt-1.5 font-mono">
-                    * Quick Demotrial Code: <strong className="text-slate-350">1234</strong>
-                  </p>
                 </div>
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-505 active:scale-98 text-white font-bold rounded-xl shadow-lg transition-all text-xs tracking-bold flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {authLoading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "सत्यापित करें (Verify OTP Code)"
-                  )}
-                </button>
-              </form>
-            )}
+              <div className="space-y-1.5">
+                <label className="driver-otp-label block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  OTP ???? ???? / Enter OTP
+                </label>
+                <input
+                  type="password"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="1234"
+                  className="w-full text-center text-xl font-bold bg-white/5 focus:bg-white/10 border border-white/10 rounded-xl py-3 text-white focus:outline-none tracking-widest focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="driver-login-button w-full py-3.5 bg-indigo-600 hover:bg-indigo-505 active:scale-98 text-white font-bold rounded-xl shadow-lg transition-all text-xs tracking-bold flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {authLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  "????? ???? / Login"
+                )}
+              </button>
+            </form>
           </div>
 
           {/* Quick Footer Segment */}
@@ -1023,7 +1090,8 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
         <div className="w-2.5 h-2.5 bg-camera rounded-full bg-slate-900 border border-slate-700"></div>
       </div>
 
-      <div className="bg-slate-950 text-white rounded-[2.5rem] overflow-hidden min-h-[640px] flex flex-col justify-between relative font-sans text-xs">
+        <div className="dnk-driver-light bg-slate-950 text-white rounded-[2.5rem] overflow-hidden min-h-[640px] flex flex-col justify-between relative font-sans text-xs">
+          <style>{driverLightThemeStyles}</style>
         {/* Navigation Head */}
         <div className="bg-slate-900 px-4 pt-6 pb-4 border-b border-white/5 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-2">
@@ -1031,10 +1099,11 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
               {currentUser.name.slice(0, 2).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-100 truncate w-28 text-left">{currentUser.name}</h2>
+              <h2 className="text-sm font-bold text-slate-100 truncate w-36 text-left">DNK TRANS LOGISTICS</h2>
+              <p className="text-[10px] text-slate-400 font-mono truncate w-36">DRIVER PORTAL · {currentUser.name}</p>
               <p className="text-[10px] text-slate-400 font-mono">Driver ID: {currentDriverMaster?.driverCode || currentUser.uid.slice(-4)}</p>
               <p className="text-[10px] text-emerald-400 font-mono truncate w-36">
-                Assigned Truck: {assignedTruckNumber || 'Not linked yet'}
+                गाड़ी / Vehicle: {assignedTruckNumber || 'Not linked yet'}
               </p>
             </div>
           </div>
@@ -1081,9 +1150,9 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                 <Truck className="w-4 h-4 text-emerald-400" />
               </div>
               <div className="min-w-0 text-left">
-                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Assigned Truck</span>
+                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">गाड़ी / Vehicle</span>
                 <strong className="text-xs text-white font-mono block truncate">
-                  Assigned Truck: {assignedTruckNumber || 'Not linked yet'}
+                  गाड़ी / Vehicle: {assignedTruckNumber || 'Not linked yet'}
                 </strong>
               </div>
             </div>
@@ -1112,7 +1181,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                   onClick={() => setShowMaintenance(true)}
                   className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Wrench className="w-4 h-4" /> वाहन में समस्या रिपोर्ट करें
+                  <Wrench className="w-4 h-4" /> समस्या रिपोर्ट करें / Report Issue
                 </button>
               </div>
             </div>
@@ -1148,37 +1217,37 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
                 <div className="grid grid-cols-2 gap-2 pt-2 text-left">
                   <div className="bg-slate-950 p-2 rounded-lg border border-white/5">
-                    <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Vehicle No</span>
+                    <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">गाड़ी / Vehicle No.</span>
                     <strong className="text-xs text-white block truncate">{activeLoadingConfirmation.vehicleNo || '-'}</strong>
                   </div>
                   <div className="bg-slate-950 p-2 rounded-lg border border-white/5">
-                    <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">Driver Name</span>
+                    <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">ड्राइवर नाम / Driver Name</span>
                     <strong className="text-xs text-white block truncate">{activeLoadingConfirmation.driverName || currentUser.name}</strong>
                   </div>
                 </div>
 
                 <div className="bg-slate-950 p-3 rounded-xl border border-white/5 space-y-2 text-slate-300">
                   <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Loading Party</span>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">लोडिंग / Loading Party</span>
                     <strong className="text-white text-xs block mt-0.5 leading-relaxed">{activeLoadingConfirmation.loadingParty || activeLoadingConfirmation.partyVendorInfo || '-'}</strong>
                   </div>
                   <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Loading Address</span>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">लोडिंग / Loading Address</span>
                     <span className="text-slate-200 text-[11px] block mt-0.5 leading-relaxed">{activeLoadingConfirmation.loadingAddress || activeLoadingConfirmation.loadingPointLocation || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Route Details</span>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">रास्ता / Route Details</span>
                     <span className="text-slate-300 text-[11px] block mt-0.5 font-mono">{activeLoadingConfirmation.routeDetails || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Loading Location</span>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">मैप / Loading Location</span>
                     {activeLoadingConfirmation.googleMapLocation?.trim() ? (
                       <button
                         type="button"
                         onClick={() => openGoogleMapLocation(activeLoadingConfirmation.googleMapLocation)}
                         className="mt-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold rounded-lg text-[10px] cursor-pointer"
                       >
-                        Open Google Map
+                        मैप खोलें / Open Map
                       </button>
                     ) : (
                       <span className="text-slate-400 text-[11px] block mt-0.5">Location not provided</span>
@@ -1199,7 +1268,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                 onClick={() => setShowMaintenance(true)}
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Wrench className="w-4 h-4" /> वाहन में समस्या रिपोर्ट करें
+                <Wrench className="w-4 h-4" /> समस्या रिपोर्ट करें / Report Issue
               </button>
             </div>
           ) : (
@@ -1217,17 +1286,17 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-rose-400 font-mono tracking-wide">{activeTrip.vehicleNumber}</h3>
-                    <p className="text-[10px] text-slate-400">Assigned Route (मार्ग विवरण)</p>
+                    <p className="text-[10px] text-slate-400">रास्ता / Route</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 pt-2 text-left">
                   <div className="bg-slate-950 p-2 rounded-lg border border-white/5">
-                    <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">लोड पॉइंट (LOAD)</span>
+                    <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">लोडिंग / Loading</span>
                     <strong className="text-xs text-white block truncate">{activeTrip.loadingPoint}</strong>
                   </div>
                   <div className="bg-slate-950 p-2 rounded-lg border border-white/5">
-                    <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">अनलोड पॉइंट (UNLOAD)</span>
+                    <span className="text-[9px] text-slate-500 font-bold block uppercase tracking-wider">अनलोडिंग / Unloading</span>
                     <strong className="text-xs text-white block truncate">{activeTrip.unloadingPoint}</strong>
                   </div>
                 </div>
@@ -1277,7 +1346,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                       <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
                         <h4 className="font-extrabold text-slate-200 block text-[11px] uppercase tracking-wide flex items-center gap-1.5">
                           <MapPin className="w-4 h-4 text-indigo-400 shrink-0" />
-                          <span>📌 लोडिंग बिंदु एवं दिशा निर्देश (Loading Board)</span>
+                          <span>📌 लोडिंग / Loading Board</span>
                         </h4>
                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase font-mono border ${
                           assignedLoading.status === 'confirmed' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
@@ -1299,7 +1368,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                         </div>
                         <div className="grid grid-cols-2 gap-2.5 pt-0.5">
                           <div>
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">3. निर्धारित रूट (Route):</span>
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">3. रास्ता / Route:</span>
                             <span className="text-slate-300 text-[11px] block mt-0.5 font-mono">{assignedLoading.routeDetails}</span>
                           </div>
                           <div>
@@ -1312,35 +1381,35 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                       <div className="bg-slate-950 p-3 rounded-xl border border-white/5 space-y-2 text-slate-300">
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Vehicle No</span>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">गाड़ी / Vehicle No.</span>
                             <strong className="text-white text-xs block mt-0.5 font-mono">{assignedLoading.vehicleNo || activeTrip.vehicleNumber || '-'}</strong>
                           </div>
                           <div>
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Loading Date/Time</span>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">लोडिंग / Loading Date-Time</span>
                             <span className="text-slate-300 text-[11px] block mt-0.5 font-mono">{assignedLoading.loadingDate || '-'} {assignedLoading.loadingTime || ''}</span>
                           </div>
                         </div>
                         <div>
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Loading Party</span>
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">लोडिंग / Loading Party</span>
                           <strong className="text-white text-xs block mt-0.5 leading-relaxed">{assignedLoading.loadingParty || assignedLoading.partyVendorInfo || '-'}</strong>
                         </div>
                         <div>
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Loading Address</span>
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">लोडिंग / Loading Address</span>
                           <span className="text-slate-200 text-[11px] block mt-0.5 leading-relaxed">{assignedLoading.loadingAddress || assignedLoading.loadingPointLocation || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Route Details</span>
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">रास्ता / Route Details</span>
                           <span className="text-slate-300 text-[11px] block mt-0.5 font-mono">{assignedLoading.routeDetails || '-'}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Loading Location</span>
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">मैप / Loading Location</span>
                           {assignedLoading.googleMapLocation?.trim() ? (
                             <button
                               type="button"
                               onClick={() => openGoogleMapLocation(assignedLoading.googleMapLocation)}
                               className="mt-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold rounded-lg text-[10px] cursor-pointer"
                             >
-                              Open Google Map
+                              मैप खोलें / Open Map
                             </button>
                           ) : (
                             <span className="text-slate-400 text-[11px] block mt-0.5">Location not provided</span>
@@ -1359,7 +1428,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                           }}
                           className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold rounded-lg text-[9px] cursor-pointer whitespace-nowrap"
                         >
-                          Navigate Map
+                          मैप खोलें / Open Map
                         </button>
                       </div>
                     </div>
@@ -1371,7 +1440,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
               {/* ACTIVE PROGRESS WORKFLOW PIPELINE ENGINES */}
               <div className="space-y-3">
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                  <span>यात्रा के महत्वपूर्ण चरण (Trip Stage Tasks)</span>
+                  <span>यात्रा / Trip Tasks</span>
                 </h4>
 
                 {/* STEP 1: Handover Inspection */}
@@ -1397,7 +1466,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                 {activeTrip.status === 'inspected' && (
                   <div className="bg-slate-900 border-2 border-dashed border-yellow-500/40 rounded-2xl p-4 space-y-3">
                     <div className="text-center space-y-0.5">
-                      <h4 className="text-xs font-black text-amber-400">📥 चरण 2: लोडिंग स्थल (Reach Loading Point)</h4>
+                      <h4 className="text-xs font-black text-amber-400">📥 लोडिंग / Loading Point</h4>
                       <p className="text-[10px] text-slate-400 select-all">Current location: Load area target route. Confirm start.</p>
                     </div>
                     <button
@@ -1405,14 +1474,14 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                       disabled={submittingStep}
                       className="w-full py-3 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-black text-xs rounded-xl tracking-wide cursor-pointer"
                     >
-                      {submittingStep ? "लिखा जा रहा है..." : "लोडिंग शुरू (Confirm Loading Start)"}
+                      {submittingStep ? "लिखा जा रहा है..." : "लोडिंग शुरू / Start Loading"}
                     </button>
                   </div>
                 )}
 
                 {activeTrip.status === 'loading_started' && (
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-                    <h4 className="text-xs font-bold text-slate-100 text-center">📥 लोडिंग विवरण और फोटो (Loading Complete)</h4>
+                    <h4 className="text-xs font-bold text-slate-100 text-center">📥 लोडिंग / Loading Photo</h4>
                     <p className="text-[10px] text-slate-400 text-center">Take loading area verification photo with current weight loads.</p>
 
                     <div className="bg-slate-950 p-4 border border-white/5 rounded-xl text-center space-y-2">
@@ -1438,7 +1507,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                       disabled={submittingStep}
                       className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs rounded-xl tracking-wide cursor-pointer"
                     >
-                      {submittingStep ? "अपलोड हो रहा है..." : "लोडिंग पूर्ण (Loading Complete & Lock)"}
+                      {submittingStep ? "अपलोड हो रहा है..." : "लोडिंग पूर्ण / Loading Done"}
                     </button>
                   </div>
                 )}
@@ -1450,7 +1519,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                       <Navigation className="w-6 h-6 animate-pulse" />
                     </div>
                     <div className="space-y-0.5">
-                      <h4 className="text-xs font-bold text-white">🚛 चरण 3: यात्रा प्रारंभ (Depart & Start Journey)</h4>
+                      <h4 className="text-xs font-bold text-white">🚛 यात्रा / Start Trip</h4>
                       <p className="text-[10px] text-slate-400">Please enter current physical odometer Start KM reading to request dispatch authorization.</p>
                     </div>
 
@@ -1518,7 +1587,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
                       <div className="grid grid-cols-2 gap-3 pb-1">
                         <div>
-                          <span className="text-[9px] uppercase font-black text-slate-500 block">निर्धारित मार्ग (Route Details)</span>
+                          <span className="text-[9px] uppercase font-black text-slate-500 block">रास्ता / Route Details</span>
                           <span className="font-bold text-white text-[10px] block mt-0.5">NH-44 Express & Eastern Highway</span>
                         </div>
                         <div>
@@ -1545,7 +1614,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                         className="py-3 px-2 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-white/5 rounded-xl font-bold text-amber-400 flex flex-col items-center justify-center gap-1 shadow-sm cursor-pointer text-[10px]"
                       >
                         <AlertTriangle className="w-5 h-5 text-amber-400" />
-                        <span>देरी की रिपोर्ट (Delay)</span>
+                        <span>देरी रिपोर्ट / Delay</span>
                       </button>
 
                       <button
@@ -1553,7 +1622,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                         className="py-3 px-2 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-white/5 rounded-xl font-bold text-indigo-400 flex flex-col items-center justify-center gap-1 shadow-sm cursor-pointer text-[10px]"
                       >
                         <Wrench className="w-5 h-5 text-indigo-400" />
-                        <span>वर्कशॉप/समस्या (Issue)</span>
+                        <span>समस्या रिपोर्ट करें / Report Issue</span>
                       </button>
                     </div>
 
@@ -1607,7 +1676,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                 {/* STEP 7: POD (PROOF OF DELIVERY) VERIFICATION CARD */}
                 {activeTrip.status === 'delivered' && (
                   <div className="bg-slate-900 rounded-2xl p-4 border border-white/5 space-y-3">
-                    <h4 className="text-xs font-extrabold text-teal-400 text-center">📂 चरण 7: POD अपलोड (Submit POD & Complete Journey)</h4>
+                    <h4 className="text-xs font-extrabold text-teal-400 text-center">📂 POD अपलोड / Submit POD</h4>
                     <p className="text-[10px] text-slate-400 text-center">Provide receiver validation info and sign drawing to unlock dispatch fee.</p>
 
                     <div className="space-y-3 text-left">
@@ -1647,7 +1716,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
                       {/* Mobile phone of receiver */}
                       <div>
-                        <label className="text-[10px] text-slate-500 font-bold block mb-1">प्राप्तकर्ता का मोबाइल (Receiver Mobile No.)</label>
+                        <label className="text-[10px] text-slate-500 font-bold block mb-1">मोबाइल नंबर / Receiver Mobile No.</label>
                         <input
                           type="tel"
                           maxLength={10}
@@ -1673,7 +1742,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                       disabled={submittingStep}
                       className="w-full py-3.5 bg-teal-500 hover:bg-teal-600 active:scale-95 text-slate-900 font-black text-xs rounded-xl mt-3 flex items-center justify-center gap-1.5 cursor-pointer uppercase"
                     >
-                      पीओडी अपलोड करें (SUBMIT POD & FINALIZE)
+                      POD अपलोड करें / Submit POD
                     </button>
                   </div>
                 )}
@@ -1684,7 +1753,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
                     <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-teal-400 mx-auto animate-pulse">
                       <FileCheck className="w-7 h-7" />
                     </div>
-                    <h3 className="text-sm font-bold text-white">POD स्वीकृति की प्रतीक्षा में (POD Upload Completed)</h3>
+                    <h3 className="text-sm font-bold text-white">POD स्वीकृति की प्रतीक्षा / POD Uploaded</h3>
                     <p className="text-slate-400 text-xs">Waiting for the operations desk to review and approve your uploaded POD document.</p>
                     <div className="text-[10px] bg-slate-950 p-2.5 rounded-lg text-slate-500 border border-white/5 inline-block font-mono">
                       Once operations approves your proof, safety deposits will release.
@@ -1707,7 +1776,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
             className="flex flex-col items-center gap-1 text-slate-200 cursor-pointer active:scale-95"
           >
             <Truck className="w-5 h-5 text-emerald-400" />
-            <span>यात्रा (Trip)</span>
+            <span>यात्रा / Trip</span>
           </button>
           <button
             onClick={() => {
@@ -1720,14 +1789,14 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
             className="flex flex-col items-center gap-1 text-slate-400 hover:text-white cursor-pointer active:scale-95"
           >
             <Wrench className="w-5 h-5 text-indigo-400" />
-            <span>मेंटेनेंस (Issue)</span>
+            <span>समस्या / Issue</span>
           </button>
         </div>
       </div>
 
       {/* ==================== OVERLAY 1: HANDOVER VEHICLE INSPECTION MODAL ==================== */}
       {showInspection && activeTrip && (
-        <div className="absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
+        <div className="dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h2 className="text-sm font-black text-rose-400 uppercase tracking-wide">वाहन हैंडओवर निरीक्षण (Handover Checklist)</h2>
@@ -1878,10 +1947,10 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
       {/* ==================== OVERLAY 2: DELAY REPORTING MODAL ==================== */}
       {showDelay && activeTrip && (
-        <div className="absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
+        <div className="dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h2 className="text-xs font-black text-amber-500 uppercase">देरी की रिपोर्ट दर्ज़ करें (Report Route Delay)</h2>
+              <h2 className="text-xs font-black text-amber-500 uppercase">देरी रिपोर्ट / Report Delay</h2>
               <button
                 onClick={() => setShowDelay(false)}
                 className="p-1 px-2 bg-slate-800 text-slate-400 rounded-lg font-bold cursor-pointer"
@@ -1892,7 +1961,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
             <div className="space-y-4 text-slate-200">
               <div>
-                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">देरी का कारण चुनें (Select Issue Reason)</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">समस्या कारण / Issue Reason</label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {[
                     { id: 'traffic', l: '🚦 ट्रैफिक (Traffic)' },
@@ -1918,7 +1987,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
               </div>
 
               <div>
-                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">समस्या का पूरा विवरण (Explain description)</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">समस्या विवरण / Issue Details</label>
                 <textarea
                   value={delayDetails}
                   onChange={(e) => setDelayDetails(e.target.value)}
@@ -1958,7 +2027,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
               onClick={submitDelay}
               className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black text-xs rounded-xl cursor-pointer"
             >
-              देरी रिपोर्ट सेव करें (SUBMIT DELAY REPORT)
+              देरी रिपोर्ट भेजें / Submit Delay
             </button>
           </div>
         </div>
@@ -1966,10 +2035,10 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
       {/* ==================== OVERLAY 3: VEHICLE ISSUE / MAINTENANCE MODAL ==================== */}
       {showMaintenance && (
-        <div className="absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
+        <div className="dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h2 className="text-xs font-extrabold text-indigo-400 uppercase">वर्कशॉप समस्या टिकट दर्ज़ करें (Report Vehicle Issue)</h2>
+              <h2 className="text-xs font-extrabold text-indigo-400 uppercase">समस्या रिपोर्ट करें / Report Issue</h2>
               <button
                 onClick={() => setShowMaintenance(false)}
                 className="p-1 px-2 bg-slate-800 text-slate-400 rounded-lg font-bold cursor-pointer"
@@ -1980,7 +2049,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
             <div className="space-y-4 text-slate-200">
               <div>
-                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">समस्या का अंग चुनें (Select Problem Item)</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">समस्या प्रकार / Issue Type</label>
                 <div className="grid grid-cols-3 gap-2 text-[10px] font-black uppercase text-center font-mono">
                   {[
                     { id: 'tyre', l: '⭕ Tyre' },
@@ -2007,7 +2076,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
               </div>
 
               <div>
-                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">समस्या का सटीक विवरण (Explain problem)</label>
+                <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">समस्या विवरण / Issue Details</label>
                 <textarea
                   value={maintDetails}
                   onChange={(e) => setMaintDetails(e.target.value)}
@@ -2048,7 +2117,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
               onClick={submitMaintenance}
               className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl cursor-pointer"
             >
-              शिकायत दर्ज करें (SUBMIT WORKSHOP TICKET)
+              समस्या रिपोर्ट करें / Report Issue
             </button>
           </div>
         </div>

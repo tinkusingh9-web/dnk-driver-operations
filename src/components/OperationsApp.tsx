@@ -698,7 +698,9 @@ export default function OperationsApp() {
     drivingLicenceNumber: '',
     licenceExpiryDate: '',
     joiningDate: new Date().toISOString().split('T')[0],
-    linkedVehicleId: ''
+    linkedVehicleId: '',
+    loginOtp: '',
+    otpActive: true
   });
 
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -1024,6 +1026,8 @@ export default function OperationsApp() {
           licenceExpiryDate: "2027-11-20",
           joiningDate: "2025-01-10",
           driverStatus: "available",
+          loginOtp: "1234",
+          otpActive: true,
           createdAt: new Date().toISOString()
         },
         {
@@ -1039,6 +1043,8 @@ export default function OperationsApp() {
           licenceExpiryDate: "2026-08-15", // Expirying soon
           joiningDate: "2024-05-15",
           driverStatus: "on_trip",
+          loginOtp: "1234",
+          otpActive: true,
           createdAt: new Date().toISOString()
         }
       ];
@@ -1139,6 +1145,10 @@ export default function OperationsApp() {
       alert("Name and mobile are mandatory");
       return;
     }
+    if (!newDriver.loginOtp.trim()) {
+      alert("Driver Login OTP is mandatory");
+      return;
+    }
 
     try {
       const driverId = "dr_uid_" + newDriver.mobile.trim();
@@ -1160,6 +1170,8 @@ export default function OperationsApp() {
         driverStatus: 'available',
         linkedVehicleId: newDriver.linkedVehicleId || undefined,
         linkedVehicleNumber: newDriver.linkedVehicleId ? (vehicles.find(v => v.id === newDriver.linkedVehicleId)?.vehicleNumber || undefined) : undefined,
+        loginOtp: newDriver.loginOtp,
+        otpActive: newDriver.otpActive,
         createdAt: new Date().toISOString(),
         recordStatus: 'Active'
       };
@@ -1196,7 +1208,7 @@ export default function OperationsApp() {
       setNewDriver({
         name: '', mobile: '', alternateMobile: '', address: '',
         aadhaarNumber: '', panNumber: '', drivingLicenceNumber: '', licenceExpiryDate: '', joiningDate: new Date().toISOString().split('T')[0],
-        linkedVehicleId: ''
+        linkedVehicleId: '', loginOtp: '', otpActive: true
       });
       alert(`🎉 Driver ${newDriver.name} added! Driver Code: ${driverCode}`);
     } catch (err) {
@@ -1210,6 +1222,10 @@ export default function OperationsApp() {
     if (!editingDriver) return;
     if (!editingDriver.name) {
       alert("Driver Name is mandatory");
+      return;
+    }
+    if (!(editingDriver.loginOtp || '').trim()) {
+      alert("Driver Login OTP is mandatory");
       return;
     }
 
@@ -4302,6 +4318,29 @@ export default function OperationsApp() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-500 font-bold block mb-1">Driver Login OTP *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newDriver.loginOtp}
+                    onChange={(e) => setNewDriver(prev => ({ ...prev, loginOtp: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
+                    placeholder="1234"
+                    className="w-full font-mono bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                  />
+                </div>
+                <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={newDriver.otpActive}
+                    onChange={(e) => setNewDriver(prev => ({ ...prev, otpActive: e.target.checked }))}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                  />
+                  OTP Active
+                </label>
+              </div>
+
               <div>
                 <label className="text-slate-500 font-bold block mb-1">Residential Address</label>
                 <input
@@ -5963,6 +6002,29 @@ export default function OperationsApp() {
                     className="w-full font-mono bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-400 cursor-not-allowed"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-500 font-bold block mb-1">Driver Login OTP *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingDriver.loginOtp || ''}
+                    onChange={(e) => setEditingDriver(prev => prev ? ({ ...prev, loginOtp: e.target.value.replace(/\D/g, '').slice(0, 6) }) : null)}
+                    placeholder="1234"
+                    className="w-full font-mono bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                  />
+                </div>
+                <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={editingDriver.otpActive === true}
+                    onChange={(e) => setEditingDriver(prev => prev ? ({ ...prev, otpActive: e.target.checked }) : null)}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                  />
+                  OTP Active
+                </label>
               </div>
 
               <div>

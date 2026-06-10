@@ -27,6 +27,8 @@ export interface DriverMaster {
   licenceDocUrl?: string; // base64
   linkedVehicleId?: string;
   linkedVehicleNumber?: string;
+  loginOtp?: string;
+  otpActive?: boolean;
   createdAt: string;
   recordStatus?: 'Active' | 'Inactive';
 }
