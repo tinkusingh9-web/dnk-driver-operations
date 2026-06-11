@@ -11,8 +11,14 @@ import {
   Monitor
 } from 'lucide-react';
 
+const appMode = import.meta.env.VITE_APP_MODE as 'driver' | 'operations' | undefined;
+const isDirectMode = appMode === 'driver' || appMode === 'operations';
+
 export default function App() {
-  const [activePortal, setActivePortal] = useState<'driver' | 'operations'>('operations');
+  const [activePortal, setActivePortal] = useState<'driver' | 'operations'>(() => {
+    if (appMode === 'operations') return 'operations';
+    return 'driver';
+  });
   const [currentDriver, setCurrentDriver] = useState<AppUser | null>(null);
 
   // Advanced Visual Themes (Light, Emerald, Cosmic Dark)
@@ -62,6 +68,8 @@ export default function App() {
     localStorage.removeItem('dnk_driver_user');
   };
 
+  const portalToRender = isDirectMode ? appMode : activePortal;
+
   return (
     <div className={`min-h-screen transition-all duration-300 flex flex-col justify-between font-sans selection:bg-indigo-600 selection:text-white ${
       theme === 'dark'
@@ -86,8 +94,12 @@ export default function App() {
               <Truck className="w-5 h-5 text-indigo-50" />
             </div>
             <div className="text-left">
-              <span className="text-xs font-black tracking-widest text-indigo-600 uppercase font-mono block">DNK Logistics</span>
-              <h1 className={`text-base font-bold tracking-tight ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>Driver & Fleet Operations Desk</h1>
+              <span className="text-xs font-black tracking-widest text-indigo-600 uppercase font-mono block">
+                {appMode === 'driver' ? 'DNK TRANS LOGISTICS' : 'DNK Logistics'}
+              </span>
+              <h1 className={`text-base font-bold tracking-tight ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                {appMode === 'driver' ? 'DRIVER PORTAL' : 'Driver & Fleet Operations Desk'}
+              </h1>
             </div>
           </div>
 
@@ -137,6 +149,7 @@ export default function App() {
           </div>
 
           {/* Elegant Portal Switcher HUD */}
+          {!isDirectMode && (
           <div className={`flex p-1 rounded-2xl border ${
             theme === 'dark'
               ? 'bg-slate-950 border-slate-800'
@@ -171,12 +184,13 @@ export default function App() {
               <span>Driver Smart Portal</span>
             </button>
           </div>
+          )}
         </div>
       </header>
 
       {/* CORE FRAME LAYOUT */}
       <main className="flex-grow max-w-7xl mx-auto px-6 py-6 w-full flex items-start justify-center">
-        {activePortal === 'driver' ? (
+        {portalToRender === 'driver' ? (
           <div className="w-full flex-grow flex flex-col items-center justify-center animate-fade-in">
             {/* Smartphone preview framing wrapper with elegant simulated physical shadow */}
             <div className="w-full max-w-md py-4">
