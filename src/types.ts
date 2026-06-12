@@ -9,6 +9,25 @@ export interface AppUser {
   createdAt: string;
 }
 
+export type OperationsStaffRole =
+  | 'Admin'
+  | 'Dispatcher'
+  | 'Loading Staff'
+  | 'LR Staff'
+  | 'Accounts'
+  | 'Viewer';
+
+export interface OperationsStaffUser {
+  id: string;
+  staffName: string;
+  username: string;
+  password: string;
+  role: OperationsStaffRole;
+  status: 'Active' | 'Inactive';
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface DriverMaster {
   id: string; // matches document ID
   driverCode: string;

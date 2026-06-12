@@ -43,9 +43,30 @@ import {
   History,
   BarChart3
 } from 'lucide-react';
-import { DriverMaster, VehicleMaster, TripAssignment, MaintenanceTicket, PodUpload, Notification, LoadingConfirmation, Consignment, PartyMaster, RouteMaster, Movement } from '../types';
+import { DriverMaster, VehicleMaster, TripAssignment, MaintenanceTicket, PodUpload, Notification, LoadingConfirmation, Consignment, PartyMaster, RouteMaster, Movement, OperationsStaffRole, OperationsStaffUser } from '../types';
 import { formatTime } from '../utils/imageCompressor';
 import { getTruckFlagStyle, truckFlagBadgeClassName } from '../utils/truckFlagStyle';
+
+type OperationsTab = 'dispatch' | 'tracking' | 'drivers' | 'vehicles' | 'workshop' | 'pod' | 'alerts' | 'loading' | 'consignments' | 'reports';
+
+const operationsStaffCollection = () => collection(db, 'users', 'staff', 'accounts');
+const operationsStaffRoles: OperationsStaffRole[] = ['Admin', 'Dispatcher', 'Loading Staff', 'LR Staff', 'Accounts', 'Viewer'];
+const roleDefaultTab: Record<OperationsStaffRole, OperationsTab> = {
+  Admin: 'dispatch',
+  Dispatcher: 'tracking',
+  'Loading Staff': 'loading',
+  'LR Staff': 'consignments',
+  Accounts: 'reports',
+  Viewer: 'dispatch'
+};
+const roleAllowedTabs: Record<OperationsStaffRole, OperationsTab[]> = {
+  Admin: ['dispatch', 'loading', 'consignments', 'tracking', 'drivers', 'vehicles', 'workshop', 'reports', 'alerts'],
+  Dispatcher: ['dispatch', 'tracking', 'vehicles'],
+  'Loading Staff': ['loading'],
+  'LR Staff': ['consignments'],
+  Accounts: ['reports', 'consignments'],
+  Viewer: ['dispatch', 'tracking', 'reports']
+};
 
 export const normalizeRouteSearchText = (text: string): string =>
   text
@@ -152,7 +173,35 @@ function RouteSmartSearchInput({
 }
 
 export default function OperationsApp() {
-  const [activeTab, setActiveTab] = useState<'dispatch' | 'tracking' | 'drivers' | 'vehicles' | 'workshop' | 'pod' | 'alerts' | 'loading' | 'consignments' | 'reports'>('dispatch');
+  const [activeTab, setActiveTab] = useState<OperationsTab>('dispatch');
+  const [currentStaff, setCurrentStaff] = useState<OperationsStaffUser | null>(() => {
+    const cached = localStorage.getItem('dnk_operations_staff');
+    if (!cached) return null;
+    try {
+      return JSON.parse(cached) as OperationsStaffUser;
+    } catch (err) {
+      console.error('Operations staff cache read failed', err);
+      return null;
+    }
+  });
+  const [staffLoginForm, setStaffLoginForm] = useState({ username: '', password: '' });
+  const [staffLoginError, setStaffLoginError] = useState('');
+  const [bootstrapAdminForm, setBootstrapAdminForm] = useState({
+    staffName: '',
+    username: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [bootstrapAdminError, setBootstrapAdminError] = useState('');
+  const [staffUsers, setStaffUsers] = useState<OperationsStaffUser[]>([]);
+  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
+  const [staffForm, setStaffForm] = useState({
+    staffName: '',
+    username: '',
+    password: '',
+    role: 'Viewer' as OperationsStaffRole,
+    status: 'Active' as 'Active' | 'Inactive'
+  });
 
   // Iframe-safe toast notifications & confirm dialogue overlays
   const [toasts, setToasts] = useState<{ id: string; message: string; type: 'success' | 'error' | 'warning' | 'info' }[]>([]);
@@ -759,6 +808,198 @@ export default function OperationsApp() {
     };
   }, [showAddLoading, showEditLoading, showAddConsignment, showAssignTrip]);
 
+  const getAllowedTabsForStaff = (staff: OperationsStaffUser | null): OperationsTab[] => {
+    if (!staff) return [];
+    return roleAllowedTabs[staff.role] || roleAllowedTabs.Viewer;
+  };
+
+  const canStaffAccessTab = (tab: OperationsTab) => {
+    if (!currentStaff) return false;
+    return getAllowedTabsForStaff(currentStaff).includes(tab);
+  };
+
+  const openOperationsTab = (tab: OperationsTab) => {
+    if (!canStaffAccessTab(tab)) {
+      showToast('You do not have access to this module.', 'warning');
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  useEffect(() => {
+    if (!currentStaff) return;
+    if (!canStaffAccessTab(activeTab)) {
+      setActiveTab(roleDefaultTab[currentStaff.role] || 'dispatch');
+    }
+  }, [currentStaff, activeTab]);
+
+  const handleOperationsStaffLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const username = staffLoginForm.username.trim();
+    const password = staffLoginForm.password;
+    setStaffLoginError('');
+    if (!username || !password) {
+      setStaffLoginError('Username and password are required.');
+      return;
+    }
+
+    try {
+      const staffQuery = query(operationsStaffCollection(), where('username', '==', username));
+      const staffSnap = await getDocs(staffQuery);
+      const staffDoc = staffSnap.docs
+        .map((d) => ({ id: d.id, ...d.data() } as OperationsStaffUser))
+        .find((staff) => staff.username === username);
+
+      if (!staffDoc || staffDoc.password !== password || staffDoc.status !== 'Active') {
+        setStaffLoginError('Invalid username/password or inactive staff account.');
+        return;
+      }
+
+      setCurrentStaff(staffDoc);
+      localStorage.setItem('dnk_operations_staff', JSON.stringify(staffDoc));
+      setActiveTab(roleDefaultTab[staffDoc.role] || 'dispatch');
+    } catch (err) {
+      console.error('Operations staff login failed', err);
+      setStaffLoginError('Unable to login. Please check Firestore connection.');
+    }
+  };
+
+  const handleBootstrapAdminSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const staffName = bootstrapAdminForm.staffName.trim();
+    const username = bootstrapAdminForm.username.trim();
+    const password = bootstrapAdminForm.password;
+    const confirmPassword = bootstrapAdminForm.confirmPassword;
+    setBootstrapAdminError('');
+
+    if (!staffName || !username || !password || !confirmPassword) {
+      setBootstrapAdminError('All fields are required.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setBootstrapAdminError('Password and confirm password do not match.');
+      return;
+    }
+
+    try {
+      const latestStaffSnap = await getDocs(operationsStaffCollection());
+      if (!latestStaffSnap.empty) {
+        setBootstrapAdminError('Admin setup is already complete. Please login.');
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const payload: OperationsStaffUser = {
+        id: username,
+        staffName,
+        username,
+        password,
+        role: 'Admin',
+        status: 'Active',
+        createdAt: now
+      };
+
+      await setDoc(doc(db, 'users', 'staff', 'accounts', username), payload);
+      setBootstrapAdminForm({ staffName: '', username: '', password: '', confirmPassword: '' });
+      setStaffLoginForm({ username, password: '' });
+      setStaffLoginError('Bootstrap admin created. Please login.');
+    } catch (err) {
+      console.error('Bootstrap admin setup failed', err);
+      setBootstrapAdminError('Failed to create bootstrap admin. Please check Firestore connection.');
+    }
+  };
+
+  const handleOperationsStaffLogout = () => {
+    setCurrentStaff(null);
+    localStorage.removeItem('dnk_operations_staff');
+    setStaffLoginForm({ username: '', password: '' });
+    setStaffLoginError('');
+  };
+
+  const resetStaffForm = () => {
+    setEditingStaffId(null);
+    setStaffForm({
+      staffName: '',
+      username: '',
+      password: '',
+      role: 'Viewer',
+      status: 'Active'
+    });
+  };
+
+  const handleEditStaffUser = (staff: OperationsStaffUser) => {
+    setEditingStaffId(staff.id);
+    setStaffForm({
+      staffName: staff.staffName || '',
+      username: staff.username || '',
+      password: staff.password || '',
+      role: staff.role || 'Viewer',
+      status: staff.status || 'Active'
+    });
+  };
+
+  const handleSaveStaffUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentStaff || currentStaff.role !== 'Admin') {
+      showToast('Only Admin can manage Staff/User records.', 'warning');
+      return;
+    }
+    const username = staffForm.username.trim();
+    if (!staffForm.staffName.trim() || !username || !staffForm.password.trim()) {
+      showToast('Staff name, username, and password are required.', 'warning');
+      return;
+    }
+
+    try {
+      const staffId = `staff_${username.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      const existing = staffUsers.find((staff) => staff.username === username && staff.id !== editingStaffId);
+      if (existing) {
+        showToast('Username already exists.', 'error');
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const payload: OperationsStaffUser = {
+        id: staffId,
+        staffName: staffForm.staffName.trim(),
+        username,
+        password: staffForm.password,
+        role: staffForm.role,
+        status: staffForm.status,
+        createdAt: staffUsers.find((staff) => staff.id === editingStaffId)?.createdAt || now,
+        updatedAt: now
+      };
+
+      await setDoc(doc(db, 'users', 'staff', 'accounts', staffId), payload);
+      if (editingStaffId && editingStaffId !== staffId) {
+        await deleteDoc(doc(db, 'users', 'staff', 'accounts', editingStaffId));
+      }
+      resetStaffForm();
+      showToast(editingStaffId ? 'Staff/User updated.' : 'Staff/User created.', 'success');
+    } catch (err) {
+      console.error('Staff/User save failed', err);
+      showToast('Failed to save Staff/User.', 'error');
+    }
+  };
+
+  const handleToggleStaffStatus = async (staff: OperationsStaffUser) => {
+    if (!currentStaff || currentStaff.role !== 'Admin') {
+      showToast('Only Admin can update Staff/User status.', 'warning');
+      return;
+    }
+    try {
+      const nextStatus = staff.status === 'Active' ? 'Inactive' : 'Active';
+      await updateDoc(doc(db, 'users', 'staff', 'accounts', staff.id), {
+        status: nextStatus,
+        updatedAt: new Date().toISOString()
+      });
+      showToast(`Staff/User marked ${nextStatus}.`, 'success');
+    } catch (err) {
+      console.error('Staff/User status update failed', err);
+      showToast('Failed to update Staff/User status.', 'error');
+    }
+  };
+
   // Rejection details overlay container
   const [rejectingPodId, setRejectingPodId] = useState<string | null>(null);
   const [podRejectionReason, setPodRejectionReason] = useState('');
@@ -870,6 +1111,12 @@ export default function OperationsApp() {
         const list: any[] = [];
         snapshot.forEach((d) => list.push({ id: d.id, ...d.data() }));
         setStatusAudits(list);
+      });
+
+      const unsubStaffUsers = onSnapshot(operationsStaffCollection(), (snapshot) => {
+        const list: OperationsStaffUser[] = [];
+        snapshot.forEach((d) => list.push({ id: d.id, ...d.data() } as OperationsStaffUser));
+        setStaffUsers(list.sort((a, b) => a.staffName.localeCompare(b.staffName)));
       });
 
       // Periodic checker for LATE trips and AUTO RESET of vehicles (15 minutes after unloading complete)
@@ -988,6 +1235,7 @@ export default function OperationsApp() {
         try { unsubRoutesNew(); } catch (e) {}
         unsubMovements();
         unsubAudits();
+        unsubStaffUsers();
         clearInterval(intervalId);
       };
     };
@@ -1343,7 +1591,7 @@ export default function OperationsApp() {
       const updatedVehicle: VehicleMaster = {
         ...editingVehicle,
         linkedDriverId: newLinkedDriverId,
-        linkedDriverName: newDrvObj ? newDrvObj.name : undefined,
+        linkedDriverName: newDrvObj ? newDrvObj.name : '',
         recordStatus: (editingVehicle as any).recordStatus || 'Active'
       };
 
@@ -1395,8 +1643,8 @@ export default function OperationsApp() {
       const payload: VehicleMaster = {
         id: vehicleId,
         ...newVehicle,
-        linkedDriverId: newVehicle.linkedDriverId || undefined,
-        linkedDriverName: linkedDrvObj ? linkedDrvObj.name : undefined,
+        linkedDriverId: newVehicle.linkedDriverId || '',
+        linkedDriverName: linkedDrvObj ? linkedDrvObj.name : '',
         createdAt: new Date().toISOString(),
         recordStatus: 'Active'
       };
@@ -1459,7 +1707,11 @@ export default function OperationsApp() {
 
   const handleActivateDriver = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'drivers', id), { recordStatus: 'Active' });
+      await updateDoc(doc(db, 'drivers', id), {
+        recordStatus: 'Active',
+        driverStatus: 'available',
+        otpActive: true
+      });
       showToast('Driver activated', 'success');
     } catch (e) {
       showToast('Failed to activate driver', 'error');
@@ -1468,11 +1720,21 @@ export default function OperationsApp() {
 
   const handleDeactivateDriver = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'drivers', id), { recordStatus: 'Inactive' });
+      await updateDoc(doc(db, 'drivers', id), {
+        recordStatus: 'Inactive',
+        driverStatus: 'inactive',
+        otpActive: false
+      });
       showToast('Driver deactivated', 'info');
     } catch (e) {
       showToast('Failed to deactivate driver', 'error');
     }
+  };
+
+  const getDriverRecordStatus = (driver: DriverMaster) => {
+    if (driver.recordStatus === 'Active') return 'Active';
+    if (driver.recordStatus === 'Inactive' || driver.driverStatus === 'inactive') return 'Inactive';
+    return 'Active';
   };
 
   const handleViewVehicle = (v: VehicleMaster) => {
@@ -3082,6 +3344,122 @@ export default function OperationsApp() {
     setVehicleSearch(record.vehicleNo || '');
   };
 
+  if (!currentStaff) {
+    const showBootstrapSetup = staffUsers.length === 0;
+    return (
+      <div className="dnk-desktop-ui min-h-screen w-full bg-slate-100 text-slate-800 flex items-center justify-center px-4">
+        {showBootstrapSetup ? (
+          <form onSubmit={handleBootstrapAdminSetup} className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl text-left">
+            <div className="mb-6">
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">DNK Operations</span>
+              <h1 className="mt-1 text-xl font-black text-slate-950">Bootstrap Admin Setup</h1>
+              <p className="mt-1 text-xs text-slate-500">No Operations staff exists yet. Create the first Admin account.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-extrabold text-slate-700">Admin Name</label>
+                <input
+                  type="text"
+                  value={bootstrapAdminForm.staffName}
+                  onChange={(e) => setBootstrapAdminForm(prev => ({ ...prev, staffName: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-extrabold text-slate-700">Username</label>
+                <input
+                  type="text"
+                  value={bootstrapAdminForm.username}
+                  onChange={(e) => setBootstrapAdminForm(prev => ({ ...prev, username: e.target.value.trim() }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-mono text-slate-900"
+                  autoComplete="username"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-extrabold text-slate-700">Password</label>
+                <input
+                  type="password"
+                  value={bootstrapAdminForm.password}
+                  onChange={(e) => setBootstrapAdminForm(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-extrabold text-slate-700">Confirm Password</label>
+                <input
+                  type="password"
+                  value={bootstrapAdminForm.confirmPassword}
+                  onChange={(e) => setBootstrapAdminForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+            </div>
+
+            {bootstrapAdminError && (
+              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
+                {bootstrapAdminError}
+              </div>
+            )}
+
+            <button type="submit" className="mt-5 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-black text-white hover:bg-indigo-700">
+              Create Admin
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleOperationsStaffLogin} className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl text-left">
+            <div className="mb-6">
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">DNK Operations</span>
+              <h1 className="mt-1 text-xl font-black text-slate-950">Staff Login</h1>
+              <p className="mt-1 text-xs text-slate-500">Username/password access for laptop and desktop operations staff.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs font-extrabold text-slate-700">Username</label>
+                <input
+                  type="text"
+                  value={staffLoginForm.username}
+                  onChange={(e) => setStaffLoginForm(prev => ({ ...prev, username: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                  autoComplete="username"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-extrabold text-slate-700">Password</label>
+                <input
+                  type="password"
+                  value={staffLoginForm.password}
+                  onChange={(e) => setStaffLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
+            </div>
+
+            {staffLoginError && (
+              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
+                {staffLoginError}
+              </div>
+            )}
+
+            <button type="submit" className="mt-5 w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-black text-white hover:bg-indigo-700">
+              Login
+            </button>
+          </form>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="dnk-desktop-ui min-h-screen w-full min-w-0 bg-slate-50 font-sans text-slate-800">
       <style>{`
@@ -3171,35 +3549,35 @@ export default function OperationsApp() {
         </div>
 
         <nav className="mt-5 flex flex-1 flex-col gap-1.5 text-left text-[11px] font-extrabold text-slate-700">
-          <button type="button" onClick={() => setActiveTab('loading')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-amber-50 hover:text-amber-900">
+          <button type="button" onClick={() => openOperationsTab('loading')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-amber-50 hover:text-amber-900">
             <Layers className="h-4 w-4 text-amber-600" />
             <span>Loading Confirmation</span>
           </button>
-          <button type="button" onClick={() => setActiveTab('consignments')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-indigo-50 hover:text-indigo-900">
+          <button type="button" onClick={() => openOperationsTab('consignments')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-indigo-50 hover:text-indigo-900">
             <ClipboardList className="h-4 w-4 text-indigo-600" />
             <span>Booking / New Consignment</span>
           </button>
-          <button type="button" onClick={() => setActiveTab('tracking')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-emerald-50 hover:text-emerald-900">
+          <button type="button" onClick={() => openOperationsTab('tracking')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-emerald-50 hover:text-emerald-900">
             <Truck className="h-4 w-4 text-emerald-600" />
             <span>Movement / Dispatch</span>
           </button>
-          <button type="button" onClick={() => setActiveTab('drivers')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-sky-50 hover:text-sky-900">
+          <button type="button" onClick={() => openOperationsTab('drivers')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-sky-50 hover:text-sky-900">
             <Users className="h-4 w-4 text-sky-600" />
             <span>Driver Master</span>
           </button>
-          <button type="button" onClick={() => setActiveTab('vehicles')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-rose-50 hover:text-rose-900">
+          <button type="button" onClick={() => openOperationsTab('vehicles')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-rose-50 hover:text-rose-900">
             <Truck className="h-4 w-4 text-rose-600" />
             <span>Vehicle Master</span>
           </button>
-          <button type="button" onClick={() => setActiveTab('workshop')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
+          <button type="button" onClick={() => openOperationsTab('workshop')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
             <Users className="h-4 w-4 text-slate-600" />
             <span>Party Master</span>
           </button>
-          <button type="button" onClick={() => setActiveTab('reports')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
+          <button type="button" onClick={() => openOperationsTab('reports')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
             <MapPin className="h-4 w-4 text-slate-600" />
             <span>Route Master</span>
           </button>
-          <button type="button" onClick={() => setActiveTab('alerts')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
+          <button type="button" onClick={() => openOperationsTab('alerts')} className="erp-menu-button flex items-center gap-3 px-3 text-left transition hover:bg-slate-100 hover:text-slate-950">
             <ShieldAlert className="h-4 w-4" />
             <span>Staff/User</span>
           </button>
@@ -3278,20 +3656,29 @@ export default function OperationsApp() {
           <span className="text-[11px] font-bold text-slate-550 font-mono hidden md:inline-block bg-white border border-slate-200/60 px-3.5 py-2.5 rounded-xl shadow-sm">
             UTC: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
           </span>
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-sm">
+            <div className="text-right">
+              <div className="font-black text-slate-900">{currentStaff.staffName}</div>
+              <div className="text-[10px] font-bold text-slate-500">{currentStaff.role}</div>
+            </div>
+            <button type="button" onClick={handleOperationsStaffLogout} className="rounded-lg bg-slate-100 px-3 py-2 text-[11px] font-black text-slate-700 hover:bg-slate-200">
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
       <details className="mb-5 rounded-2xl border border-slate-200 bg-white p-2 text-[11px] font-extrabold text-slate-700 shadow-sm md:hidden">
         <summary className="cursor-pointer rounded-lg bg-slate-100 px-3 py-2 text-slate-900">ERP Menu</summary>
         <div className="mt-2 grid grid-cols-1 gap-2">
-          <button type="button" onClick={() => setActiveTab('loading')} className="rounded-lg bg-amber-50 px-3 py-2 text-left text-amber-900">Loading Confirmation</button>
-          <button type="button" onClick={() => setActiveTab('consignments')} className="rounded-lg bg-indigo-50 px-3 py-2 text-left text-indigo-900">Booking / New Consignment</button>
-          <button type="button" onClick={() => setActiveTab('tracking')} className="rounded-lg bg-emerald-50 px-3 py-2 text-left text-emerald-900">Movement / Dispatch</button>
-          <button type="button" onClick={() => setActiveTab('drivers')} className="rounded-lg bg-sky-50 px-3 py-2 text-left text-sky-900">Driver Master</button>
-          <button type="button" onClick={() => setActiveTab('vehicles')} className="rounded-lg bg-rose-50 px-3 py-2 text-left text-rose-900">Vehicle Master</button>
-          <button type="button" onClick={() => setActiveTab('workshop')} className="rounded-lg bg-slate-100 px-3 py-2 text-left">Party Master</button>
-          <button type="button" onClick={() => setActiveTab('reports')} className="rounded-lg bg-slate-100 px-3 py-2 text-left">Route Master</button>
-          <button type="button" onClick={() => setActiveTab('alerts')} className="rounded-lg bg-slate-50 px-3 py-2 text-left text-slate-700">Staff/User</button>
+          <button type="button" onClick={() => openOperationsTab('loading')} className="rounded-lg bg-amber-50 px-3 py-2 text-left text-amber-900">Loading Confirmation</button>
+          <button type="button" onClick={() => openOperationsTab('consignments')} className="rounded-lg bg-indigo-50 px-3 py-2 text-left text-indigo-900">Booking / New Consignment</button>
+          <button type="button" onClick={() => openOperationsTab('tracking')} className="rounded-lg bg-emerald-50 px-3 py-2 text-left text-emerald-900">Movement / Dispatch</button>
+          <button type="button" onClick={() => openOperationsTab('drivers')} className="rounded-lg bg-sky-50 px-3 py-2 text-left text-sky-900">Driver Master</button>
+          <button type="button" onClick={() => openOperationsTab('vehicles')} className="rounded-lg bg-rose-50 px-3 py-2 text-left text-rose-900">Vehicle Master</button>
+          <button type="button" onClick={() => openOperationsTab('workshop')} className="rounded-lg bg-slate-100 px-3 py-2 text-left">Party Master</button>
+          <button type="button" onClick={() => openOperationsTab('reports')} className="rounded-lg bg-slate-100 px-3 py-2 text-left">Route Master</button>
+          <button type="button" onClick={() => openOperationsTab('alerts')} className="rounded-lg bg-slate-50 px-3 py-2 text-left text-slate-700">Staff/User</button>
         </div>
       </details>
 
@@ -3966,13 +4353,17 @@ export default function OperationsApp() {
                           const q = driverListSearch.toLowerCase();
                           return [d.name, d.mobile, d.drivingLicenceNumber].some(v => (v || '').toLowerCase().includes(q));
                         }).map(d => {
-                          const status = (d as any).recordStatus || 'Active';
+                          const status = getDriverRecordStatus(d);
                           return (
                             <tr key={d.id} className="hover:bg-slate-50">
                               <td className="p-3 font-bold">{d.name}</td>
                               <td className="p-3 font-mono">{d.mobile}</td>
                               <td className="p-3">{d.drivingLicenceNumber || '-'}</td>
-                              <td className="p-3">{status}</td>
+                              <td className="p-3">
+                                <span className={`rounded-full px-2 py-1 text-[10px] font-black ${status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                  {status}
+                                </span>
+                              </td>
                               <td className="p-3">
                                 <div className="flex flex-wrap gap-1.5">
                                   <button type="button" onClick={() => handleViewDriver(d)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
@@ -3981,7 +4372,7 @@ export default function OperationsApp() {
                                   {status !== 'Active' ? (
                                     <button type="button" onClick={() => handleActivateDriver(d.id)} className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold">Activate</button>
                                   ) : (
-                                    <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 font-bold">Inactive</button>
+                                    <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 font-bold">Deactivate</button>
                                   )}
                                 </div>
                               </td>
@@ -4139,15 +4530,92 @@ export default function OperationsApp() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h2 className="text-base font-extrabold text-slate-900">Staff/User</h2>
-                      <p className="text-xs text-slate-500">Staff/User list-first shell. No existing Staff/User CRUD workflow is defined in this file.</p>
+                      <p className="text-xs text-slate-500">Operations username/password access for desktop staff. Stored under users/staff/accounts.</p>
                     </div>
-                    <button type="button" className="px-4 py-2.5 bg-slate-200 text-slate-500 font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-not-allowed">
+                    <button type="button" onClick={resetStaffForm} disabled={currentStaff.role !== 'Admin'} className={`px-4 py-2.5 font-extrabold text-xs rounded-xl flex items-center gap-2 ${currentStaff.role === 'Admin' ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}>
                       <Plus className="w-4 h-4" />
                       New Staff/User
                     </button>
                   </div>
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-                    Staff/User table will appear here when an existing Staff/User collection and handlers are available.
+                  {currentStaff.role === 'Admin' ? (
+                    <form onSubmit={handleSaveStaffUser} className="grid grid-cols-1 gap-4 rounded-3xl border border-slate-200 bg-white p-4 text-xs lg:grid-cols-5">
+                      <div>
+                        <label className="mb-1 block text-slate-500">Staff Name *</label>
+                        <input value={staffForm.staffName} onChange={(e) => setStaffForm(prev => ({ ...prev, staffName: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white p-2.5" required />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-slate-500">Username *</label>
+                        <input value={staffForm.username} onChange={(e) => setStaffForm(prev => ({ ...prev, username: e.target.value.trim() }))} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono" required />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-slate-500">Password *</label>
+                        <input type="text" value={staffForm.password} onChange={(e) => setStaffForm(prev => ({ ...prev, password: e.target.value }))} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono" required />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-slate-500">Role *</label>
+                        <select value={staffForm.role} onChange={(e) => setStaffForm(prev => ({ ...prev, role: e.target.value as OperationsStaffRole }))} className="w-full rounded-xl border border-slate-200 bg-white p-2.5">
+                          {operationsStaffRoles.map(role => <option key={role} value={role}>{role}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-slate-500">Status *</label>
+                        <select value={staffForm.status} onChange={(e) => setStaffForm(prev => ({ ...prev, status: e.target.value as 'Active' | 'Inactive' }))} className="w-full rounded-xl border border-slate-200 bg-white p-2.5">
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                      </div>
+                      <div className="lg:col-span-5 flex justify-end gap-2 border-t border-slate-100 pt-3">
+                        <button type="button" onClick={resetStaffForm} className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-bold text-slate-700">Reset</button>
+                        <button type="submit" className="rounded-xl bg-indigo-600 px-4 py-2 font-black text-white hover:bg-indigo-700">
+                          {editingStaffId ? 'Update Staff/User' : 'Create Staff/User'}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
+                      Only Admin can create, update, activate, or deactivate Staff/User records.
+                    </div>
+                  )}
+
+                  <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-3xl border border-slate-200 bg-white">
+                    <table className="min-w-[900px] w-full text-left text-xs">
+                      <thead className="text-[10px] font-black uppercase text-slate-500">
+                        <tr>
+                          <th className="p-3">Staff Name</th>
+                          <th className="p-3">Username</th>
+                          <th className="p-3">Password</th>
+                          <th className="p-3">Role</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {staffUsers.map(staff => (
+                          <tr key={staff.id} className="hover:bg-slate-50">
+                            <td className="p-3 font-bold text-slate-900">{staff.staffName}</td>
+                            <td className="p-3 font-mono">{staff.username}</td>
+                            <td className="p-3 font-mono">{staff.password}</td>
+                            <td className="p-3">{staff.role}</td>
+                            <td className="p-3">
+                              <span className={`rounded-full px-2 py-1 text-[10px] font-black ${staff.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                                {staff.status}
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex flex-wrap gap-1.5">
+                                <button type="button" onClick={() => handleEditStaffUser(staff)} disabled={currentStaff.role !== 'Admin'} className="rounded-full bg-indigo-100 px-2 py-1 font-bold text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">Edit</button>
+                                <button type="button" onClick={() => handleToggleStaffStatus(staff)} disabled={currentStaff.role !== 'Admin'} className="rounded-full bg-slate-100 px-2 py-1 font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
+                                  {staff.status === 'Active' ? 'Inactive' : 'Activate'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {staffUsers.length === 0 && (
+                      <div className="p-8 text-center text-sm text-slate-500">No Staff/User records found.</div>
+                    )}
                   </div>
                 </div>
               )}
@@ -4537,13 +5005,17 @@ export default function OperationsApp() {
                       const q = driverListSearch.toLowerCase();
                       return [d.name, d.mobile, d.drivingLicenceNumber].some(v => (v || '').toLowerCase().includes(q));
                     }).map(d => {
-                      const status = (d as any).recordStatus || 'Active';
+                      const status = getDriverRecordStatus(d);
                       return (
                         <tr key={d.id} className="hover:bg-slate-50/75 transition-colors">
                           <td className="p-2 font-bold">{d.name}</td>
                           <td className="p-2 font-mono">{d.mobile}</td>
                           <td className="p-2">{d.drivingLicenceNumber || '—'}</td>
-                          <td className="p-2">{status === 'Active' ? '✅ Active' : '⛔ Inactive'}</td>
+                          <td className="p-2">
+                            <span className={`rounded-full px-2 py-1 text-[10px] font-black ${status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                              {status}
+                            </span>
+                          </td>
                           <td className="p-2">
                             <div className="flex gap-2">
                               <button type="button" onClick={() => handleViewDriver(d)} className="px-2 py-1 bg-slate-100 rounded text-[11px]">View</button>
@@ -4552,7 +5024,7 @@ export default function OperationsApp() {
                               {status !== 'Active' ? (
                                 <button type="button" onClick={() => handleActivateDriver(d.id)} className="px-2 py-1 bg-emerald-100 rounded text-[11px]">Activate</button>
                               ) : (
-                                <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 bg-rose-100 rounded text-[11px]">Inactive</button>
+                                <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 bg-rose-100 rounded text-[11px]">Deactivate</button>
                               )}
                             </div>
                           </td>
