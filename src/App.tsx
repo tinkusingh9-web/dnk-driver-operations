@@ -78,14 +78,12 @@ export default function App() {
 
   if (isDriverMode) {
     return (
-      <div className="w-screen h-screen overflow-hidden bg-slate-50" style={{ width: '100vw', height: '100vh' }}>
-        <DriverApp
-          currentUser={currentDriver}
-          onLoginSuccess={handleDriverLogin}
-          onLogout={handleDriverLogout}
-          fullScreen
-        />
-      </div>
+      <DriverApp
+        currentUser={currentDriver}
+        onLoginSuccess={handleDriverLogin}
+        onLogout={handleDriverLogout}
+        fullScreen
+      />
     );
   }
 

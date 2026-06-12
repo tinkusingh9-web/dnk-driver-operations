@@ -1086,10 +1086,10 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess, fullS
   };
 
   const driverFrameClass = fullScreen
-    ? 'w-screen h-screen bg-slate-50 relative select-none overflow-hidden'
+    ? 'w-screen h-screen overflow-y-auto bg-[#F8FAFC]'
     : 'w-full max-w-sm mx-auto bg-slate-150 rounded-[3rem] p-3 shadow-2xl border-4 border-slate-800 relative select-none';
   const driverShellClass = fullScreen
-    ? 'dnk-driver-light bg-slate-950 text-white rounded-none overflow-hidden h-full min-h-0 flex flex-col justify-between relative font-sans text-xs'
+    ? 'dnk-driver-light w-full min-h-screen bg-[#F8FAFC] text-slate-900 overflow-y-auto flex flex-col relative font-sans text-xs'
     : 'dnk-driver-light bg-slate-950 text-white rounded-[2.5rem] overflow-hidden min-h-[640px] flex flex-col justify-between relative font-sans text-xs';
   const driverOverlayClass = fullScreen
     ? 'dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-none p-4 text-left'
