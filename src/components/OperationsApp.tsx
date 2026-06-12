@@ -1141,7 +1141,8 @@ export default function OperationsApp() {
   // CREATE NEW DRIVER PROFILE
   const handleCreateDriver = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDriver.name || !newDriver.mobile) {
+    const mobile = newDriver.mobile.trim();
+    if (!newDriver.name || !mobile) {
       alert("Name and mobile are mandatory");
       return;
     }
@@ -1151,27 +1152,31 @@ export default function OperationsApp() {
     }
 
     try {
-      const driverId = "dr_uid_" + newDriver.mobile.trim();
+      const driverId = "dr_uid_" + mobile;
       const driverCode = "DR-" + Math.floor(1000 + Math.random() * 9000);
+      const linkedVehicleId = newDriver.linkedVehicleId || '';
+      const linkedVehicleNumber = linkedVehicleId
+        ? vehicles.find(v => v.id === linkedVehicleId)?.vehicleNumber || ''
+        : '';
 
       // Create Driver Master Entry
       const driverObj: DriverMaster = {
         id: driverId,
         driverCode,
-        name: newDriver.name,
-        mobile: newDriver.mobile,
-        alternateMobile: newDriver.alternateMobile,
-        address: newDriver.address,
-        aadhaarNumber: newDriver.aadhaarNumber,
-        panNumber: newDriver.panNumber,
-        drivingLicenceNumber: newDriver.drivingLicenceNumber,
-        licenceExpiryDate: newDriver.licenceExpiryDate,
-        joiningDate: newDriver.joiningDate,
+        name: newDriver.name || '',
+        mobile,
+        alternateMobile: newDriver.alternateMobile || '',
+        address: newDriver.address || '',
+        aadhaarNumber: newDriver.aadhaarNumber || '',
+        panNumber: newDriver.panNumber || '',
+        drivingLicenceNumber: newDriver.drivingLicenceNumber || '',
+        licenceExpiryDate: newDriver.licenceExpiryDate || '',
+        joiningDate: newDriver.joiningDate || new Date().toISOString().split('T')[0],
         driverStatus: 'available',
-        linkedVehicleId: newDriver.linkedVehicleId || undefined,
-        linkedVehicleNumber: newDriver.linkedVehicleId ? (vehicles.find(v => v.id === newDriver.linkedVehicleId)?.vehicleNumber || undefined) : undefined,
-        loginOtp: newDriver.loginOtp,
-        otpActive: newDriver.otpActive,
+        linkedVehicleId,
+        linkedVehicleNumber,
+        loginOtp: newDriver.loginOtp || '',
+        otpActive: newDriver.otpActive ?? true,
         createdAt: new Date().toISOString(),
         recordStatus: 'Active'
       };
@@ -1197,8 +1202,8 @@ export default function OperationsApp() {
       // Reg as User doc so driver can log in
       await setDoc(doc(db, 'users', driverId), {
         uid: driverId,
-        name: newDriver.name,
-        mobile: newDriver.mobile,
+        name: newDriver.name || '',
+        mobile,
         role: 'driver',
         status: 'active',
         createdAt: new Date().toISOString()
@@ -1224,26 +1229,52 @@ export default function OperationsApp() {
       alert("Driver Name is mandatory");
       return;
     }
+    const newMobile = (editingDriver.mobile || '').trim();
+    if (!newMobile) {
+      alert("Driver mobile is mandatory");
+      return;
+    }
     if (!(editingDriver.loginOtp || '').trim()) {
       alert("Driver Login OTP is mandatory");
       return;
     }
 
     try {
-      const previousLinkedVehicleId = drivers.find(d => d.id === editingDriver.id)?.linkedVehicleId;
-      const newLinkedVehicleId = editingDriver.linkedVehicleId || undefined;
+      const oldDriverId = editingDriver.id;
+      const newDriverId = "dr_uid_" + newMobile;
+      const mobileChanged = oldDriverId !== newDriverId;
+      const previousDriver = drivers.find(d => d.id === oldDriverId);
+      const previousLinkedVehicleId = previousDriver?.linkedVehicleId || '';
+      const newLinkedVehicleId = editingDriver.linkedVehicleId || '';
       const newVehObj = newLinkedVehicleId ? vehicles.find(v => v.id === newLinkedVehicleId) : null;
+      const recordStatus = (editingDriver as any).recordStatus || 'Active';
 
       const updatedDriver: DriverMaster = {
-        ...editingDriver,
+        id: newDriverId,
+        driverCode: editingDriver.driverCode || previousDriver?.driverCode || '',
+        name: editingDriver.name || '',
+        mobile: newMobile,
+        alternateMobile: editingDriver.alternateMobile || '',
+        address: editingDriver.address || '',
+        aadhaarNumber: editingDriver.aadhaarNumber || '',
+        panNumber: editingDriver.panNumber || '',
+        drivingLicenceNumber: editingDriver.drivingLicenceNumber || '',
+        licenceExpiryDate: editingDriver.licenceExpiryDate || '',
+        joiningDate: editingDriver.joiningDate || previousDriver?.joiningDate || '',
         driverStatus: editingDriver.driverStatus || 'available',
+        aadhaarDocUrl: editingDriver.aadhaarDocUrl || '',
+        panDocUrl: editingDriver.panDocUrl || '',
+        licenceDocUrl: editingDriver.licenceDocUrl || '',
         linkedVehicleId: newLinkedVehicleId,
-        linkedVehicleNumber: newVehObj ? newVehObj.vehicleNumber : undefined,
-        recordStatus: (editingDriver as any).recordStatus || 'Active'
+        linkedVehicleNumber: newVehObj ? newVehObj.vehicleNumber : '',
+        loginOtp: editingDriver.loginOtp || '',
+        otpActive: editingDriver.otpActive ?? true,
+        createdAt: editingDriver.createdAt || previousDriver?.createdAt || new Date().toISOString(),
+        recordStatus
       };
 
       // Update Driver Profile
-      await setDoc(doc(db, 'drivers', editingDriver.id), updatedDriver);
+      await setDoc(doc(db, 'drivers', newDriverId), updatedDriver);
 
       // Handle custom link changes
       if (previousLinkedVehicleId !== newLinkedVehicleId) {
@@ -1255,11 +1286,11 @@ export default function OperationsApp() {
         }
         if (newLinkedVehicleId) {
           await updateDoc(doc(db, 'vehicles', newLinkedVehicleId), {
-            linkedDriverId: editingDriver.id,
+            linkedDriverId: newDriverId,
             linkedDriverName: editingDriver.name
           });
           // Clear any other drivers originally pointing to this vehicle (to preserve 1:1)
-          const otherDrivers = drivers.filter(d => d.linkedVehicleId === newLinkedVehicleId && d.id !== editingDriver.id);
+          const otherDrivers = drivers.filter(d => d.linkedVehicleId === newLinkedVehicleId && d.id !== oldDriverId && d.id !== newDriverId);
           for (const d of otherDrivers) {
             await updateDoc(doc(db, 'drivers', d.id), {
               linkedVehicleId: '',
@@ -1270,19 +1301,25 @@ export default function OperationsApp() {
       } else if (newLinkedVehicleId) {
         // Enforce updated driver name in vehicle link reference
         await updateDoc(doc(db, 'vehicles', newLinkedVehicleId), {
+          linkedDriverId: newDriverId,
           linkedDriverName: editingDriver.name
         });
       }
 
       // Update the name and status entry in 'users' so login and trip references show updated names
-      await setDoc(doc(db, 'users', editingDriver.id), {
-        uid: editingDriver.id,
-        name: editingDriver.name,
-        mobile: editingDriver.mobile,
+      await setDoc(doc(db, 'users', newDriverId), {
+        uid: newDriverId,
+        name: editingDriver.name || '',
+        mobile: newMobile,
         role: 'driver',
-        status: editingDriver.driverStatus === 'inactive' ? 'inactive' : 'active',
+        status: mobileChanged ? 'active' : (editingDriver.driverStatus === 'inactive' ? 'inactive' : 'active'),
         createdAt: editingDriver.createdAt || new Date().toISOString()
       }, { merge: true });
+
+      if (mobileChanged) {
+        await deleteDoc(doc(db, 'drivers', oldDriverId));
+        await deleteDoc(doc(db, 'users', oldDriverId));
+      }
 
       setShowEditDriver(false);
       setEditingDriver(null);
@@ -1300,7 +1337,7 @@ export default function OperationsApp() {
 
     try {
       const previousLinkedDriverId = vehicles.find(v => v.id === editingVehicle.id)?.linkedDriverId;
-      const newLinkedDriverId = editingVehicle.linkedDriverId || undefined;
+      const newLinkedDriverId = editingVehicle.linkedDriverId || '';
       const newDrvObj = newLinkedDriverId ? drivers.find(d => d.id === newLinkedDriverId) : null;
 
       const updatedVehicle: VehicleMaster = {
@@ -1397,13 +1434,25 @@ export default function OperationsApp() {
 
   // Driver / Vehicle list actions: view, open edit modal, activate, deactivate
   const handleViewDriver = (d: DriverMaster) => {
-    setEditingDriver(d);
+    setEditingDriver({
+      ...d,
+      linkedVehicleId: d.linkedVehicleId || '',
+      linkedVehicleNumber: d.linkedVehicleNumber || '',
+      loginOtp: d.loginOtp || '',
+      otpActive: d.otpActive ?? true
+    });
     setIsViewOnlyDriver(true);
     setShowEditDriver(true);
   };
 
   const openEditDriverFromList = (d: DriverMaster) => {
-    setEditingDriver(d);
+    setEditingDriver({
+      ...d,
+      linkedVehicleId: d.linkedVehicleId || '',
+      linkedVehicleNumber: d.linkedVehicleNumber || '',
+      loginOtp: d.loginOtp || '',
+      otpActive: d.otpActive ?? true
+    });
     setIsViewOnlyDriver(false);
     setShowEditDriver(true);
   };
@@ -3874,7 +3923,27 @@ export default function OperationsApp() {
                       <h2 className="text-base font-extrabold text-slate-900">Driver Master</h2>
                       <p className="text-xs text-slate-500">Driver directory opens first; New Driver opens the existing onboard form.</p>
                     </div>
-                    <button type="button" onClick={() => setShowAddDriver(true)} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewDriver({
+                          name: '',
+                          mobile: '',
+                          alternateMobile: '',
+                          address: '',
+                          aadhaarNumber: '',
+                          panNumber: '',
+                          drivingLicenceNumber: '',
+                          licenceExpiryDate: '',
+                          joiningDate: new Date().toISOString().split('T')[0],
+                          linkedVehicleId: '',
+                          loginOtp: '',
+                          otpActive: true
+                        });
+                        setShowAddDriver(true);
+                      }}
+                      className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center gap-2 cursor-pointer"
+                    >
                       <Plus className="w-4 h-4" />
                       New Driver
                     </button>
@@ -3908,10 +3977,11 @@ export default function OperationsApp() {
                                 <div className="flex flex-wrap gap-1.5">
                                   <button type="button" onClick={() => handleViewDriver(d)} className="px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">View</button>
                                   <button type="button" onClick={() => openEditDriverFromList(d)} className="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-bold">Edit</button>
+                                  <button type="button" onClick={() => openEditDriverFromList(d)} className="px-2 py-1 rounded-full bg-sky-100 text-sky-700 font-bold">Update</button>
                                   {status !== 'Active' ? (
                                     <button type="button" onClick={() => handleActivateDriver(d.id)} className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold">Activate</button>
                                   ) : (
-                                    <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 font-bold">Deactivate</button>
+                                    <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 font-bold">Inactive</button>
                                   )}
                                 </div>
                               </td>
@@ -4428,7 +4498,7 @@ export default function OperationsApp() {
                   type="submit"
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg cursor-pointer text-xs"
                 >
-                  Onboard Profile
+                  Save Driver
                 </button>
               </div>
             </form>
@@ -4478,10 +4548,11 @@ export default function OperationsApp() {
                             <div className="flex gap-2">
                               <button type="button" onClick={() => handleViewDriver(d)} className="px-2 py-1 bg-slate-100 rounded text-[11px]">View</button>
                               <button type="button" onClick={() => openEditDriverFromList(d)} className="px-2 py-1 bg-indigo-100 rounded text-[11px]">Edit</button>
+                              <button type="button" onClick={() => openEditDriverFromList(d)} className="px-2 py-1 bg-sky-100 rounded text-[11px]">Update</button>
                               {status !== 'Active' ? (
                                 <button type="button" onClick={() => handleActivateDriver(d.id)} className="px-2 py-1 bg-emerald-100 rounded text-[11px]">Activate</button>
                               ) : (
-                                <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 bg-rose-100 rounded text-[11px]">Deactivate</button>
+                                <button type="button" onClick={() => handleDeactivateDriver(d.id)} className="px-2 py-1 bg-rose-100 rounded text-[11px]">Inactive</button>
                               )}
                             </div>
                           </td>
@@ -5630,8 +5701,8 @@ export default function OperationsApp() {
 
       {/* ==================== MOVEMENT CREATE / HISTORY DIALOG SHEET ==================== */}
       {showAddMovement && (
-        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800">
-          <div className="w-full min-w-0 min-h-screen px-6 py-5 text-left flex flex-col">
+        <div className="fixed inset-0 bg-slate-50 z-50 text-slate-800">
+          <div className="w-full min-w-0 h-full min-h-0 overflow-y-auto px-6 py-5 text-left flex flex-col">
             <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">Movement Create</h3>
             <form onSubmit={handleCreateMovement} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 py-6 text-xs">
               <div className="xl:col-span-3">
@@ -5994,12 +6065,14 @@ export default function OperationsApp() {
                   />
                 </div>
                 <div>
-                  <label className="text-slate-500 font-bold block mb-1 text-slate-400">Mobile Contact (Read-only)</label>
+                  <label className="text-slate-500 font-bold block mb-1">Mobile Contact *</label>
                   <input
-                    type="text"
-                    disabled
+                    type="tel"
+                    maxLength={10}
+                    required
                     value={editingDriver.mobile}
-                    className="w-full font-mono bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-400 cursor-not-allowed"
+                    onChange={(e) => setEditingDriver(prev => prev ? ({ ...prev, mobile: e.target.value.replace(/\D/g, '') }) : null)}
+                    className="w-full font-mono bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
                   />
                 </div>
               </div>
@@ -6126,12 +6199,12 @@ export default function OperationsApp() {
                 >
                   Cancel
                 </button>
-                {!isViewOnlyVehicle && (
+                {!isViewOnlyDriver && (
                   <button
                     type="submit"
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-lg cursor-pointer text-xs"
                   >
-                    Save Changes
+                    Update Driver
                   </button>
                 )}
               </div>
@@ -6303,8 +6376,8 @@ export default function OperationsApp() {
 
       {/* ==================== CREATE LOADING POINT MODEL DIALOG ==================== */}
       {showAddLoading && (
-        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800">
-          <div className="w-full max-w-[1500px] mx-auto min-h-screen px-6 py-5 text-left flex flex-col">
+        <div className="fixed inset-0 bg-slate-50 z-50 text-slate-800">
+          <div className="w-full max-w-[1500px] mx-auto h-full min-h-0 overflow-y-auto px-6 py-5 text-left flex flex-col">
             <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">Loading Confirmation</h3>
             <div className="py-6">
             <form onSubmit={handleCreateLoading} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 text-xs">
@@ -7005,8 +7078,8 @@ export default function OperationsApp() {
 
       {/* ==================== CREATE CONSIGNMENT MODEL DIALOG ==================== */}
       {showAddConsignment && (
-        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto text-slate-800">
-          <div className="w-full max-w-[1500px] mx-auto min-h-screen px-6 py-5 text-left flex flex-col">
+        <div className="fixed inset-0 bg-slate-50 z-50 text-slate-800">
+          <div className="w-full max-w-[1500px] mx-auto h-full min-h-0 overflow-y-auto px-6 py-5 text-left flex flex-col">
             <h3 className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur text-lg font-black text-slate-900 border-b border-slate-200 py-4 block">LR Creation</h3>
             <form onSubmit={handleCreateConsignment} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 py-6 text-xs">
               <div>

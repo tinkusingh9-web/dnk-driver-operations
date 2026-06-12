@@ -11,8 +11,16 @@ import {
   Monitor
 } from 'lucide-react';
 
-const appMode = import.meta.env.VITE_APP_MODE as 'driver' | 'operations' | undefined;
-const isDirectMode = appMode === 'driver' || appMode === 'operations';
+const appMode =
+  import.meta.env.VITE_APP_MODE ||
+  import.meta.env.VITE_MODE ||
+  '';
+console.log('VITE_APP_MODE', import.meta.env.VITE_APP_MODE);
+console.log('VITE_MODE', import.meta.env.VITE_MODE);
+console.log('FINAL_APP_MODE', appMode);
+const isDriverMode = appMode === 'driver';
+const isOperationsMode = appMode === 'operations';
+const isDirectMode = isDriverMode || isOperationsMode;
 
 export default function App() {
   const [activePortal, setActivePortal] = useState<'driver' | 'operations'>(() => {
@@ -68,7 +76,18 @@ export default function App() {
     localStorage.removeItem('dnk_driver_user');
   };
 
-  const portalToRender = isDirectMode ? appMode : activePortal;
+  if (isDriverMode) {
+    return (
+      <div className="w-screen h-screen overflow-hidden bg-slate-50" style={{ width: '100vw', height: '100vh' }}>
+        <DriverApp
+          currentUser={currentDriver}
+          onLoginSuccess={handleDriverLogin}
+          onLogout={handleDriverLogout}
+          fullScreen
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen transition-all duration-300 flex flex-col justify-between font-sans selection:bg-indigo-600 selection:text-white ${
@@ -95,10 +114,10 @@ export default function App() {
             </div>
             <div className="text-left">
               <span className="text-xs font-black tracking-widest text-indigo-600 uppercase font-mono block">
-                {appMode === 'driver' ? 'DNK TRANS LOGISTICS' : 'DNK Logistics'}
+                {isDriverMode ? 'DNK TRANS LOGISTICS' : 'DNK Logistics'}
               </span>
               <h1 className={`text-base font-bold tracking-tight ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                {appMode === 'driver' ? 'DRIVER PORTAL' : 'Driver & Fleet Operations Desk'}
+                {isDriverMode ? 'DRIVER PORTAL' : 'Driver & Fleet Operations Desk'}
               </h1>
             </div>
           </div>
@@ -190,7 +209,11 @@ export default function App() {
 
       {/* CORE FRAME LAYOUT */}
       <main className="flex-grow max-w-7xl mx-auto px-6 py-6 w-full flex items-start justify-center">
-        {portalToRender === 'driver' ? (
+        {isOperationsMode ? (
+          <div className="w-full animate-fade-in">
+            <OperationsApp />
+          </div>
+        ) : activePortal === 'driver' ? (
           <div className="w-full flex-grow flex flex-col items-center justify-center animate-fade-in">
             {/* Smartphone preview framing wrapper with elegant simulated physical shadow */}
             <div className="w-full max-w-md py-4">

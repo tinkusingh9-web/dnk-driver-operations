@@ -49,6 +49,7 @@ interface DriverAppProps {
   currentUser: AppUser | null;
   onLogout: () => void;
   onLoginSuccess: (user: AppUser) => void;
+  fullScreen?: boolean;
 }
 
 const normalizeVehicleNumber = (value: string = '') => value.trim().toUpperCase();
@@ -226,7 +227,7 @@ const driverLightThemeStyles = `
   }
 `;
 
-export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: DriverAppProps) {
+export default function DriverApp({ currentUser, onLogout, onLoginSuccess, fullScreen = false }: DriverAppProps) {
   // Authentication states
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -993,16 +994,26 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
     window.open(mapUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const driverFrameClass = fullScreen
+    ? 'w-screen h-screen bg-slate-50 relative select-none overflow-hidden'
+    : 'w-full max-w-sm mx-auto bg-slate-150 rounded-[3rem] p-3 shadow-2xl border-4 border-slate-800 relative select-none';
+  const driverShellClass = fullScreen
+    ? 'dnk-driver-light bg-slate-950 text-white rounded-none overflow-hidden h-full min-h-0 flex flex-col justify-between relative font-sans text-xs'
+    : 'dnk-driver-light bg-slate-950 text-white rounded-[2.5rem] overflow-hidden min-h-[640px] flex flex-col justify-between relative font-sans text-xs';
+  const driverOverlayClass = fullScreen
+    ? 'dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-none p-4 text-left'
+    : 'dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left';
+
   // ==================== RENDER SIGN-IN SCREEN ====================
   if (!currentUser) {
     return (
-      <div className="w-full max-w-sm mx-auto bg-slate-150 rounded-[3rem] p-3 shadow-2xl border-4 border-slate-800 relative select-none">
+      <div className={driverFrameClass}>
         {/* Smartphone Notch / Status Bar */}
-        <div className="w-1/2 h-5 bg-slate-800 absolute top-0 left-1/4 rounded-b-xl z-20 flex items-center justify-center">
+        {!fullScreen && <div className="w-1/2 h-5 bg-slate-800 absolute top-0 left-1/4 rounded-b-xl z-20 flex items-center justify-center">
           <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-700"></div>
-        </div>
+        </div>}
 
-        <div className="dnk-driver-light bg-slate-950 text-white rounded-[2.5rem] overflow-hidden min-h-[640px] flex flex-col justify-between relative font-sans text-xs">
+        <div className={driverShellClass}>
           <style>{driverLightThemeStyles}</style>
           
           {/* Header Segment */}
@@ -1084,13 +1095,13 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
   // ==================== CENTRAL PORTAL UI (DRIVER LOGGED IN) ====================
   return (
-    <div className="w-full max-w-sm mx-auto bg-slate-150 rounded-[3rem] p-3 shadow-2xl border-4 border-slate-800 relative select-none">
+    <div className={driverFrameClass}>
       {/* Smartphone Notch / Status Bar */}
-      <div className="w-1/2 h-5 bg-slate-800 absolute top-0 left-1/4 rounded-b-xl z-20 flex items-center justify-center">
+      {!fullScreen && <div className="w-1/2 h-5 bg-slate-800 absolute top-0 left-1/4 rounded-b-xl z-20 flex items-center justify-center">
         <div className="w-2.5 h-2.5 bg-camera rounded-full bg-slate-900 border border-slate-700"></div>
-      </div>
+      </div>}
 
-        <div className="dnk-driver-light bg-slate-950 text-white rounded-[2.5rem] overflow-hidden min-h-[640px] flex flex-col justify-between relative font-sans text-xs">
+        <div className={driverShellClass}>
           <style>{driverLightThemeStyles}</style>
         {/* Navigation Head */}
         <div className="bg-slate-900 px-4 pt-6 pb-4 border-b border-white/5 flex items-center justify-between sticky top-0 z-10">
@@ -1796,7 +1807,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
       {/* ==================== OVERLAY 1: HANDOVER VEHICLE INSPECTION MODAL ==================== */}
       {showInspection && activeTrip && (
-        <div className="dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
+        <div className={driverOverlayClass}>
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h2 className="text-sm font-black text-rose-400 uppercase tracking-wide">वाहन हैंडओवर निरीक्षण (Handover Checklist)</h2>
@@ -1947,7 +1958,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
       {/* ==================== OVERLAY 2: DELAY REPORTING MODAL ==================== */}
       {showDelay && activeTrip && (
-        <div className="dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
+        <div className={driverOverlayClass}>
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h2 className="text-xs font-black text-amber-500 uppercase">देरी रिपोर्ट / Report Delay</h2>
@@ -2035,7 +2046,7 @@ export default function DriverApp({ currentUser, onLogout, onLoginSuccess }: Dri
 
       {/* ==================== OVERLAY 3: VEHICLE ISSUE / MAINTENANCE MODAL ==================== */}
       {showMaintenance && (
-        <div className="dnk-driver-light absolute inset-0 bg-slate-950 z-30 flex flex-col justify-between overflow-y-auto rounded-[2.5rem] p-4 text-left">
+        <div className={driverOverlayClass}>
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h2 className="text-xs font-extrabold text-indigo-400 uppercase">समस्या रिपोर्ट करें / Report Issue</h2>
