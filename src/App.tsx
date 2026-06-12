@@ -11,16 +11,9 @@ import {
   Monitor
 } from 'lucide-react';
 
-const appMode =
-  import.meta.env.VITE_APP_MODE ||
-  import.meta.env.VITE_MODE ||
-  '';
-console.log('VITE_APP_MODE', import.meta.env.VITE_APP_MODE);
-console.log('VITE_MODE', import.meta.env.VITE_MODE);
-console.log('FINAL_APP_MODE', appMode);
+const appMode = import.meta.env.VITE_APP_MODE || '';
 const isDriverMode = appMode === 'driver';
 const isOperationsMode = appMode === 'operations';
-const isDirectMode = isDriverMode || isOperationsMode;
 
 export default function App() {
   const [activePortal, setActivePortal] = useState<'driver' | 'operations'>(() => {
@@ -85,6 +78,10 @@ export default function App() {
         fullScreen
       />
     );
+  }
+
+  if (isOperationsMode) {
+    return <OperationsApp />;
   }
 
   return (
@@ -166,7 +163,6 @@ export default function App() {
           </div>
 
           {/* Elegant Portal Switcher HUD */}
-          {!isDirectMode && (
           <div className={`flex p-1 rounded-2xl border ${
             theme === 'dark'
               ? 'bg-slate-950 border-slate-800'
@@ -201,17 +197,12 @@ export default function App() {
               <span>Driver Smart Portal</span>
             </button>
           </div>
-          )}
         </div>
       </header>
 
       {/* CORE FRAME LAYOUT */}
       <main className="flex-grow max-w-7xl mx-auto px-6 py-6 w-full flex items-start justify-center">
-        {isOperationsMode ? (
-          <div className="w-full animate-fade-in">
-            <OperationsApp />
-          </div>
-        ) : activePortal === 'driver' ? (
+        {activePortal === 'driver' ? (
           <div className="w-full flex-grow flex flex-col items-center justify-center animate-fade-in">
             {/* Smartphone preview framing wrapper with elegant simulated physical shadow */}
             <div className="w-full max-w-md py-4">
